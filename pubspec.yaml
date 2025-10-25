@@ -1,0 +1,35 @@
+name: rd_client
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.9.0
+  pretty_dio_logger: ^1.4.0
+  alice: ^1.0.0
+  alice_dio: ^1.0.7
+  url_launcher: ^6.3.0
+  flutter_secure_storage: ^9.2.4
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.9.0
+  get: ^4.7.2
+  intl: ^0.20.2
+  shimmer: ^3.0.0
+  app_links: ^6.4.1
+  
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.8.0
+  freezed: ^3.2.3
+  json_serializable: ^6.11.1
+
+flutter:
+  uses-material-design: true
