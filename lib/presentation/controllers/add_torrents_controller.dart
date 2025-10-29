@@ -15,7 +15,7 @@ class AddTorrentsController extends GetxController {
 
   void initialize(String? magnetLink, Torrent? addedTorrent) {
     this.magnetLink = magnetLink;
-    this.initialTorrent = addedTorrent;
+    initialTorrent = addedTorrent;
     this.addedTorrent.value = addedTorrent;
 
     fetchAddedTorrent().then((_) {
@@ -26,9 +26,16 @@ class AddTorrentsController extends GetxController {
   }
 
   Future<void> fetchAddedTorrent() async {
-    final id = addedTorrent.value == null
-        ? await ApiService.instance.addTorrent(magnetLink!)
-        : addedTorrent.value!.id;
+    String? id;
+    if (magnetLink?.contains('magnet:') ?? true) {
+      id = addedTorrent.value == null
+          ? await ApiService.instance.addMagnet(magnetLink!)
+          : addedTorrent.value!.id;
+    } else {
+      id = addedTorrent.value == null
+          ? await ApiService.instance.addTorrent(magnetLink!)
+          : addedTorrent.value!.id;
+    }
 
     addedTorrent.value = await ApiService.instance.getSingleTorrent(
       id.toString(),

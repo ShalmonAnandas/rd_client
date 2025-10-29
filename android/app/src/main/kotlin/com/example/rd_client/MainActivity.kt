@@ -1,4 +1,4 @@
-package com.example.rd_client
+package dev.shalmon.rdclient
 
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -8,7 +8,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.example.rd_client/video_apps"
+    private val CHANNEL = "dev.shalmon.rdclient/video_apps"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

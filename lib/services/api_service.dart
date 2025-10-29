@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:alice_dio/alice_dio_adapter.dart';
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
@@ -81,11 +83,28 @@ class ApiService {
     }
   }
 
-  Future<String?> addTorrent(String magnetUrl) async {
+  Future<String?> addMagnet(String magnetUrl) async {
     try {
       final response = await _dio.post(
         '/torrents/addMagnet',
         data: FormData.fromMap({'magnet': magnetUrl}),
+      );
+
+      return response.data['id']?.toString();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<String?> addTorrent(String filePath) async {
+    try {
+      // Read the file as raw bytes
+      final file = await File(filePath).readAsBytes();
+
+      final response = await _dio.put(
+        '/torrents/addTorrent',
+        data: file,
+        options: Options(headers: {'Content-Type': 'application/x-bittorrent'}),
       );
 
       return response.data['id']?.toString();

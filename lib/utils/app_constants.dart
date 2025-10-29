@@ -7,9 +7,6 @@ class AppConstants {
   static String? apiToken;
 
   static Alice alice = Alice(
-    configuration: AliceConfiguration(
-      showNotification: true,
-      showInspectorOnShake: true,
-    ),
+    configuration: AliceConfiguration(showInspectorOnShake: true),
   );
 }

@@ -2,7 +2,7 @@ import 'package:flutter/services.dart';
 
 class VideoAppsService {
   static const MethodChannel _channel = MethodChannel(
-    'com.example.rd_client/video_apps',
+    'dev.shalmon.rdclient/video_apps',
   );
 
   /// Retrieves a list of all installed video player apps on the device
@@ -38,7 +38,6 @@ class VideoAppsService {
   static Future<List<Map<String, dynamic>>> getThirdPartyVideoApps() async {
     try {
       final apps = await getInstalledVideoApps();
-      print(apps);
       return apps.where((app) => app['isSystemApp'] != '1').toList();
     } catch (e) {
       throw Exception('Failed to get third-party video apps: $e');
