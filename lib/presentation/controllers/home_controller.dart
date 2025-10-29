@@ -14,7 +14,8 @@ class HomeController extends GetxController {
     super.onInit();
   }
 
-  void fetchTorrents() async {
+  Future<void> fetchTorrents() async {
+    torrents.clear();
     torrents.value = await apiService.getTorrentList();
   }
 }

@@ -5,10 +5,10 @@ import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:get/instance_manager.dart';
 import 'package:rd_client/presentation/controllers/home_controller.dart';
 import 'package:rd_client/presentation/screens/add_torrents_screen.dart';
-import 'package:rd_client/presentation/screens/torrent_page.dart';
+import 'package:rd_client/presentation/screens/settings_screen.dart';
+import 'package:rd_client/services/storage_service.dart';
 import 'package:rd_client/widgets/display_tile.dart';
 import 'package:rd_client/widgets/display_tile_shimmer.dart';
-import 'package:rd_client/widgets/token_setup_popup.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,32 +30,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           CupertinoPageRoute(
             builder: (context) => AddTorrentsScreen(magnetLink: uri.toString()),
           ),
-        );
+        ).then((_) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            controller.fetchTorrents();
+            WidgetsBinding.instance.addObserver(this);
+          });
+        });
       }
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      controller.fetchTorrents();
-      WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (await StorageService.instance.getToken() == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Please set your API token to use the APP.')),
+        );
+        Navigator.push(
+          context,
+          CupertinoPageRoute(builder: (context) => SettingsScreen()),
+        );
+      } else {
+        controller.fetchTorrents();
+        WidgetsBinding.instance.addObserver(this);
+      }
     });
     super.initState();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
-      _appLinks.uriLinkStream.listen((uri) {
-        if (uri.scheme == 'magnet') {
-          Navigator.push(
-            context,
-            CupertinoPageRoute(
-              builder: (context) =>
-                  AddTorrentsScreen(magnetLink: uri.toString()),
-            ),
-          );
-        }
-      });
-    }
   }
 
   @override
@@ -65,7 +62,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         title: Text('RD Client'),
         actions: [
           IconButton(
-            onPressed: () => TokenSetupPopup.show(context),
+            onPressed: () => Navigator.push(
+              context,
+              CupertinoPageRoute(builder: (context) => SettingsScreen()),
+            ),
             icon: Icon(Icons.settings),
           ),
         ],
@@ -73,25 +73,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       body: Center(
         child: Obx(() {
           if (controller.torrents.isEmpty) {
-            return ListView.builder(
-              itemCount: 10,
-              itemBuilder: (context, index) => DisplayTileShimmer(),
+            return RefreshIndicator(
+              onRefresh: () => controller.fetchTorrents(),
+              child: ListView.builder(
+                itemCount: 10,
+                itemBuilder: (context, index) => DisplayTileShimmer(),
+              ),
             );
           }
-          return ListView.builder(
-            itemCount: controller.torrents.length,
-            itemBuilder: (context, index) {
-              final torrent = controller.torrents[index];
-              return InkWell(
-                onTap: () => Navigator.push(
-                  context,
-                  CupertinoPageRoute(
-                    builder: (context) => TorrentPage(torrent: torrent),
-                  ),
-                ),
-                child: DisplayTile(torrent: torrent),
-              );
-            },
+          return RefreshIndicator(
+            onRefresh: () => controller.fetchTorrents(),
+            child: ListView.builder(
+              itemCount: controller.torrents.length,
+              itemBuilder: (context, index) {
+                final torrent = controller.torrents[index];
+                return DisplayTile(torrent: torrent);
+              },
+            ),
           );
         }),
       ),

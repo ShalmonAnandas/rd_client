@@ -33,6 +33,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "8.2.0"
+  android_intent_plus:
+    dependency: "direct main"
+    description:
+      name: android_intent_plus
+      sha256: "14a9f94c5825a528e8c38ee89a33dbeba947efbbf76f066c174f4f3ae4f48feb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.0.0"
   app_links:
     dependency: "direct main"
     description:
@@ -760,6 +768,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.5.0"
+  restart_app:
+    dependency: "direct main"
+    description:
+      name: restart_app
+      sha256: "00d5ec3e9de871cedbe552fc41e615b042b5ec654385e090e0983f6d02f655ed"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.2"
   rxdart:
     dependency: transitive
     description:

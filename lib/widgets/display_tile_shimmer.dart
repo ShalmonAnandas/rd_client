@@ -6,20 +6,8 @@ class DisplayTileShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade900,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: Colors.grey.shade800, width: 1.2),
-      ),
+    return SizedBox(
+      height: 100,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         child: Column(

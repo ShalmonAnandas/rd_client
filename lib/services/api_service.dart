@@ -94,6 +94,14 @@ class ApiService {
     }
   }
 
+  Future<void> deleteTorrent(String id) async {
+    try {
+      await _dio.delete('/torrents/delete/$id', data: FormData.fromMap({}));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> addFilesToTorrent(String torrentId, String fileIds) async {
     try {
       await _dio.post(
