@@ -2,39 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rd_client/presentation/controllers/settings_controller.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends State<SettingsScreen> {
-  late final SettingsController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = SettingsController();
-    _controller.addListener(() {
-      if (mounted) setState(() {});
-    });
-    _loadInitialData();
-  }
-
-  Future<void> _loadInitialData() async {
-    await _controller.loadToken();
-    await _controller.loadVideoApps();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final controller = Get.put(SettingsController());
+
+    // Load initial data
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await controller.loadToken();
+      await controller.loadVideoApps();
+    });
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F1419),
       appBar: AppBar(
@@ -56,11 +36,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
           child: Column(
             children: [
-              _buildApiConfigurationSection(),
+              _buildApiConfigurationSection(controller),
               const SizedBox(height: 20),
-              _buildVideoAppSection(),
+              _buildVideoAppSection(controller),
               const SizedBox(height: 20),
-              _buildDebugSection(),
+              _buildDebugSection(controller),
             ],
           ),
         ),
@@ -117,23 +97,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildApiConfigurationSection() {
+  Widget _buildApiConfigurationSection(SettingsController controller) {
     return _buildSectionContainer(
       title: 'Real Debrid API Token',
       icon: Icons.vpn_key_rounded,
       iconColor: const Color(0xFF3B82F6),
       child: Column(
         children: [
-          Obx(() => _buildTokenField()),
+          Obx(() => _buildTokenField(controller)),
           const SizedBox(height: 12),
-          Obx(() => _buildTokenActions()),
+          Obx(() => _buildTokenActions(controller)),
         ],
       ),
     );
   }
 
-  Widget _buildTokenField() {
-    if (_controller.isLoading.value) {
+  Widget _buildTokenField(SettingsController controller) {
+    if (controller.isLoading.value) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
@@ -145,8 +125,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
 
-    if (!_controller.isTokenEditable.value &&
-        _controller.tokenController.text.isNotEmpty) {
+    if (!controller.isTokenEditable.value &&
+        controller.tokenController.text.isNotEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -179,7 +159,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${_controller.tokenController.text.substring(0, 8)}••••••••',
+                    '${controller.tokenController.text.substring(0, 8)}••••••••',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF9CA3AF),
@@ -190,7 +170,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             IconButton(
-              onPressed: _controller.enableTokenEditing,
+              onPressed: controller.enableTokenEditing,
               icon: const Icon(
                 Icons.edit_rounded,
                 color: Color(0xFF9CA3AF),
@@ -210,7 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     return TextField(
-      controller: _controller.tokenController,
+      controller: controller.tokenController,
       style: const TextStyle(color: Color(0xFFF9FAFB), fontSize: 14),
       decoration: InputDecoration(
         hintText: 'Enter your Real Debrid API token',
@@ -234,12 +214,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           vertical: 12,
         ),
       ),
-      obscureText: !_controller.isTokenEditable.value,
+      obscureText: !controller.isTokenEditable.value,
     );
   }
 
-  Widget _buildTokenActions() {
-    if (!_controller.isTokenEditable.value) {
+  Widget _buildTokenActions(SettingsController controller) {
+    if (!controller.isTokenEditable.value) {
       return const SizedBox.shrink();
     }
 
@@ -247,7 +227,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       children: [
         Expanded(
           child: OutlinedButton(
-            onPressed: _controller.disableTokenEditing,
+            onPressed: controller.disableTokenEditing,
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF9CA3AF),
               side: const BorderSide(color: Color(0xFF2D3748)),
@@ -262,9 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         const SizedBox(width: 12),
         Expanded(
           child: ElevatedButton(
-            onPressed: _controller.isLoading.value
-                ? null
-                : _controller.saveToken,
+            onPressed: controller.isLoading.value ? null : controller.saveToken,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3B82F6),
               foregroundColor: Colors.white,
@@ -274,7 +252,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
-            child: _controller.isLoading.value
+            child: controller.isLoading.value
                 ? const SizedBox(
                     width: 16,
                     height: 16,
@@ -290,17 +268,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildVideoAppSection() {
+  Widget _buildVideoAppSection(SettingsController controller) {
     return _buildSectionContainer(
       title: 'Default Video App',
       icon: Icons.video_library_rounded,
       iconColor: const Color(0xFF8B5CF6),
-      child: Obx(() => _buildVideoAppDropdown()),
+      child: Obx(() => _buildVideoAppDropdown(controller)),
     );
   }
 
-  Widget _buildVideoAppDropdown() {
-    if (_controller.isVideoAppsLoading.value) {
+  Widget _buildVideoAppDropdown(SettingsController controller) {
+    if (controller.isVideoAppsLoading.value) {
       return const Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 20),
@@ -312,7 +290,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
 
-    if (_controller.availableVideoApps.isEmpty) {
+    if (controller.availableVideoApps.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -352,39 +330,151 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFF2D3748), width: 1),
           ),
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              splashColor: Colors.transparent,
-              highlightColor: Colors.transparent,
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<Map<String, dynamic>>(
-                value: _controller.selectedVideoApp.value,
-                dropdownColor: const Color(0xFF1F2937),
-                style: const TextStyle(color: Color(0xFFF9FAFB), fontSize: 14),
-                icon: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF2D3748).withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      color: Color(0xFF9CA3AF),
-                      size: 16,
+          child: Builder(
+            builder: (context) => Theme(
+              data: Theme.of(context).copyWith(
+                splashColor: Colors.transparent,
+                highlightColor: Colors.transparent,
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<Map<String, dynamic>>(
+                  value: controller.selectedVideoApp.value,
+                  dropdownColor: const Color(0xFF1F2937),
+                  style: const TextStyle(
+                    color: Color(0xFFF9FAFB),
+                    fontSize: 14,
+                  ),
+                  icon: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2D3748).withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: Color(0xFF9CA3AF),
+                        size: 16,
+                      ),
                     ),
                   ),
-                ),
-                isExpanded: true,
-                itemHeight: 56,
-                borderRadius: BorderRadius.circular(12),
-                items: [
-                  DropdownMenuItem<Map<String, dynamic>>(
-                    value: null,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                  isExpanded: true,
+                  itemHeight: 56,
+                  borderRadius: BorderRadius.circular(12),
+                  items: [
+                    DropdownMenuItem<Map<String, dynamic>>(
+                      value: null,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6B7280).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(
+                                Icons.devices_rounded,
+                                size: 16,
+                                color: Color(0xFF9CA3AF),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'System Default',
+                                    style: TextStyle(
+                                      color: Color(0xFFF9FAFB),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Let the system choose',
+                                    style: TextStyle(
+                                      color: Color(0xFF6B7280),
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    ...controller.availableVideoApps.map(
+                      (app) => DropdownMenuItem<Map<String, dynamic>>(
+                        value: app,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFF8B5CF6,
+                                  ).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Icon(
+                                  Icons.play_circle_outline_rounded,
+                                  size: 16,
+                                  color: Color(0xFF8B5CF6),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      app['appName'] ??
+                                          app['packageName'] ??
+                                          'Unknown App',
+                                      style: const TextStyle(
+                                        color: Color(0xFFF9FAFB),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    if (app['packageName'] != null &&
+                                        app['appName'] != null)
+                                      Text(
+                                        app['packageName'],
+                                        style: const TextStyle(
+                                          color: Color(0xFF6B7280),
+                                          fontSize: 11,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    controller.setDefaultVideoApp(value);
+                  },
+                  selectedItemBuilder: (context) => [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       child: Row(
                         children: [
                           Container(
@@ -401,37 +491,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           const SizedBox(width: 12),
                           const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'System Default',
-                                  style: TextStyle(
-                                    color: Color(0xFFF9FAFB),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Text(
-                                  'Let the system choose',
-                                  style: TextStyle(
-                                    color: Color(0xFF6B7280),
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              'System Default',
+                              style: TextStyle(
+                                color: Color(0xFFF9FAFB),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                  ..._controller.availableVideoApps.map(
-                    (app) => DropdownMenuItem<Map<String, dynamic>>(
-                      value: app,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
+                    ...controller.availableVideoApps.map(
+                      (app) => Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         child: Row(
                           children: [
                             Container(
@@ -448,116 +525,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                             const SizedBox(width: 12),
                             Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    app['appName'] ??
-                                        app['packageName'] ??
-                                        'Unknown App',
-                                    style: const TextStyle(
-                                      color: Color(0xFFF9FAFB),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (app['packageName'] != null &&
-                                      app['appName'] != null)
-                                    Text(
-                                      app['packageName'],
-                                      style: const TextStyle(
-                                        color: Color(0xFF6B7280),
-                                        fontSize: 11,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                ],
+                              child: Text(
+                                app['appName'] ??
+                                    app['packageName'] ??
+                                    'Unknown App',
+                                style: const TextStyle(
+                                  color: Color(0xFFF9FAFB),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-                ],
-                onChanged: (value) {
-                  _controller.setDefaultVideoApp(value);
-                },
-                selectedItemBuilder: (context) => [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF6B7280).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Icon(
-                            Icons.devices_rounded,
-                            size: 16,
-                            color: Color(0xFF9CA3AF),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'System Default',
-                            style: TextStyle(
-                              color: Color(0xFFF9FAFB),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ..._controller.availableVideoApps.map(
-                    (app) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF8B5CF6).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Icon(
-                              Icons.play_circle_outline_rounded,
-                              size: 16,
-                              color: Color(0xFF8B5CF6),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              app['appName'] ??
-                                  app['packageName'] ??
-                                  'Unknown App',
-                              style: const TextStyle(
-                                color: Color(0xFFF9FAFB),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
@@ -566,7 +551,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildDebugSection() {
+  Widget _buildDebugSection(SettingsController controller) {
     return _buildSectionContainer(
       title: 'Debug Tools',
       icon: Icons.developer_mode_rounded,
@@ -574,7 +559,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: SizedBox(
         width: double.infinity,
         child: OutlinedButton.icon(
-          onPressed: _controller.showApiCalls,
+          onPressed: controller.showApiCalls,
           style: OutlinedButton.styleFrom(
             foregroundColor: const Color(0xFFFF6B35),
             side: const BorderSide(color: Color(0xFFFF6B35), width: 1),

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:alice_dio/alice_dio_adapter.dart';
 import 'package:dio/dio.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
+import 'package:rd_client/models/media_model.dart';
 import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/models/unrestricted_link_model.dart';
 import 'package:rd_client/utils/app_constants.dart';
@@ -10,7 +11,6 @@ import 'package:rd_client/utils/app_constants.dart';
 class ApiService {
   ApiService._() {
     _dio.options = BaseOptions(
-      baseUrl: AppConstants.rdBaseUrl,
       headers: {'Authorization': 'Bearer ${AppConstants.apiToken}'},
     );
     _dio.interceptors.add(
@@ -40,7 +40,7 @@ class ApiService {
 
   Future<List<Torrent>> getTorrentList() async {
     try {
-      final response = await _dio.get('/torrents');
+      final response = await _dio.get('${AppConstants.rdBaseUrl}/torrents');
 
       List<Torrent> torrents = [];
 
@@ -56,7 +56,9 @@ class ApiService {
 
   Future<Torrent> getSingleTorrent(String id) async {
     try {
-      final response = await _dio.get('/torrents/info/$id');
+      final response = await _dio.get(
+        '${AppConstants.rdBaseUrl}/torrents/info/$id',
+      );
 
       return Torrent.fromJson(response.data);
     } catch (e) {
@@ -71,7 +73,7 @@ class ApiService {
       }
 
       final response = await _dio.post(
-        '/unrestrict/link',
+        '${AppConstants.rdBaseUrl}/unrestrict/link',
         data: FormData.fromMap({'link': link}),
       );
 
@@ -86,7 +88,7 @@ class ApiService {
   Future<String?> addMagnet(String magnetUrl) async {
     try {
       final response = await _dio.post(
-        '/torrents/addMagnet',
+        '${AppConstants.rdBaseUrl}/torrents/addMagnet',
         data: FormData.fromMap({'magnet': magnetUrl}),
       );
 
@@ -102,7 +104,7 @@ class ApiService {
       final file = await File(filePath).readAsBytes();
 
       final response = await _dio.put(
-        '/torrents/addTorrent',
+        '${AppConstants.rdBaseUrl}/torrents/addTorrent',
         data: file,
         options: Options(headers: {'Content-Type': 'application/x-bittorrent'}),
       );
@@ -115,7 +117,10 @@ class ApiService {
 
   Future<void> deleteTorrent(String id) async {
     try {
-      await _dio.delete('/torrents/delete/$id', data: FormData.fromMap({}));
+      await _dio.delete(
+        '${AppConstants.rdBaseUrl}/torrents/delete/$id',
+        data: FormData.fromMap({}),
+      );
     } catch (e) {
       rethrow;
     }
@@ -124,9 +129,29 @@ class ApiService {
   Future<void> addFilesToTorrent(String torrentId, String fileIds) async {
     try {
       await _dio.post(
-        '/torrents/selectFiles/$torrentId',
+        '${AppConstants.rdBaseUrl}/torrents/selectFiles/$torrentId',
         data: FormData.fromMap({'files': fileIds}),
       );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<List<MediaModel>> searchMedia(String query) async {
+    try {
+      final result = await _dio.get(
+        '${AppConstants.tmdbBaseUrl}/search/multi?query=$query',
+      );
+
+      if (result.data['results'] != null && result.data['results'].isNotEmpty) {
+        List<MediaModel> mediaList = [];
+        for (var item in result.data['results']) {
+          mediaList.add(MediaModel.fromJson(item));
+        }
+        return mediaList;
+      } else {
+        return [];
+      }
     } catch (e) {
       rethrow;
     }

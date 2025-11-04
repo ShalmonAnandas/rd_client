@@ -4,6 +4,8 @@ import 'package:alice/model/alice_configuration.dart';
 class AppConstants {
   static String rdBaseUrl = 'https://api.real-debrid.com/rest/1.0';
 
+  static String tmdbBaseUrl = 'https://streamline-be.vercel.app';
+
   static String? apiToken;
 
   static Alice alice = Alice(
