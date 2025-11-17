@@ -428,11 +428,19 @@ class _StreamingLinksScreenState extends State<StreamingLinksScreen>
       }
 
       // Launch the Torrentio URL directly with Android Intent
+      // Add HTTP headers for Real-Debrid compatibility
       final intent = AndroidIntent(
         action: 'action_view',
         data: url,
         package: defaultVideoApp,
         type: 'video/*',
+        arguments: {
+          'headers': {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://torrentio.strem.fun/',
+          },
+        },
       );
       await intent.launch();
     } catch (e) {

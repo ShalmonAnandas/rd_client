@@ -1,7 +1,11 @@
+import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:rd_client/services/storage_service.dart';
 import 'package:rd_client/services/watch_progress_service.dart';
+import 'package:rd_client/widgets/watch_progress_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -437,25 +441,107 @@ class _LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
-  void _handleItemTap(WatchProgress item) {
-    if (item.downloadUrl != null && item.downloadUrl!.isNotEmpty) {
-      // For direct download URLs (torrents)
+  Future<void> _handleItemTap(WatchProgress item) async {
+    if (item.downloadUrl == null || item.downloadUrl!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Opening video...'),
-          duration: Duration(seconds: 1),
+          content: Text('Video URL not available'),
+          duration: Duration(seconds: 2),
+          backgroundColor: Colors.red,
         ),
       );
-      // The video will be opened through the existing torrent page logic
-    } else if (item.mediaType == 'tv' || item.mediaType == 'movie') {
-      // For streaming content, reconstruct the IMDB ID from the ID
-      // This is a simplified approach - you might need to store IMDB ID separately
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Resume watching ${item.mediaTitle ?? item.filename}'),
-          duration: const Duration(seconds: 1),
-        ),
+      return;
+    }
+
+    // Show resume dialog if there's existing progress and video is not fully watched
+    bool shouldResume = false;
+    if (!item.isWatched && item.position > 10000 && mounted) {
+      final resume = await WatchProgressDialog.show(
+        context: context,
+        progress: item,
       );
+
+      if (resume == null) return; // User dismissed dialog
+      shouldResume = resume;
+    }
+
+    // Update watch progress
+    final updatedProgress = WatchProgress(
+      id: item.id,
+      filename: item.filename,
+      position: shouldResume ? item.position : 0,
+      duration: item.duration,
+      lastWatched: DateTime.now(),
+      downloadUrl: item.downloadUrl,
+      mediaType: item.mediaType,
+      mediaTitle: item.mediaTitle,
+      seasonNumber: item.seasonNumber,
+      episodeNumber: item.episodeNumber,
+      posterPath: item.posterPath,
+      overview: item.overview,
+    );
+
+    await _watchProgressService.saveWatchProgress(updatedProgress);
+
+    try {
+      // Get the default video app
+      final defaultVideoApp = await StorageService.instance
+          .getDefaultVideoApp();
+
+      // Build URL with timestamp parameter for resume (some players support this)
+      String url = item.downloadUrl!;
+      if (shouldResume && item.position > 0) {
+        final timeInSeconds = (item.position / 1000).floor();
+        // Add timestamp parameter (works with some players like VLC, MX Player)
+        url = '$url#t=$timeInSeconds';
+      }
+
+      // Launch the video with Android Intent
+      // Add HTTP headers for Real-Debrid compatibility
+      final intent = AndroidIntent(
+        action: 'action_view',
+        data: url,
+        package: defaultVideoApp,
+        type: 'video/*',
+        arguments: {
+          'headers': {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': item.mediaType == 'torrent'
+                ? 'https://real-debrid.com/'
+                : 'https://torrentio.strem.fun/',
+          },
+        },
+      );
+      await intent.launch();
+    } catch (e) {
+      // Fallback to url_launcher if AndroidIntent fails
+      try {
+        final uri = Uri.parse(item.downloadUrl!);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Could not open video player'),
+                duration: Duration(seconds: 2),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to play video: $e'),
+              duration: const Duration(seconds: 2),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 

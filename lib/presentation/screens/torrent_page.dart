@@ -205,11 +205,19 @@ class _TorrentPageState extends State<TorrentPage> with WidgetsBindingObserver {
         url = '$url#t=$timeInSeconds';
       }
 
+      // Add HTTP headers for Real-Debrid compatibility
       final intent = AndroidIntent(
         action: 'action_view',
         data: url,
         package: defaultVideoApp,
         type: 'video/*',
+        arguments: {
+          'headers': {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://real-debrid.com/',
+          },
+        },
       );
       await intent.launch();
     } else {
