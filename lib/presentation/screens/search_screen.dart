@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:get/get.dart';
 import 'package:rd_client/models/media_model.dart';
 import 'package:rd_client/presentation/controllers/search_controller.dart'
     as search_ctrl;
+import 'package:rd_client/presentation/screens/media_details_screen.dart';
 import 'package:rd_client/widgets/glass_text_field.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -55,7 +57,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.search,
+                    LucideIcons.search,
                     size: 64,
                     color: Colors.white.withOpacity(0.3),
                   ),
@@ -82,7 +84,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
+                    LucideIcons.circleAlert,
                     size: 64,
                     color: Colors.red.withOpacity(0.7),
                   ),
@@ -106,7 +108,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.search_off,
+                    LucideIcons.searchX,
                     size: 64,
                     color: Colors.white.withOpacity(0.3),
                   ),
@@ -153,7 +155,15 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to media details
+          // Navigate to media details
+          if (media.id != null && media.mediaType != null) {
+            Get.to(
+              () => MediaDetailsScreen(
+                mediaType: media.mediaType!,
+                mediaId: media.id!,
+              ),
+            );
+          }
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -226,7 +236,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                         ],
                         const Spacer(),
-                        Icon(Icons.star, color: Colors.amber, size: 16),
+                        Icon(LucideIcons.star, color: Colors.amber, size: 16),
                         const SizedBox(width: 4),
                         Text(
                           rating,
@@ -263,7 +273,11 @@ class _SearchScreenState extends State<SearchScreen> {
       width: 80,
       height: 120,
       color: Colors.white.withOpacity(0.1),
-      child: Icon(Icons.movie, color: Colors.white.withOpacity(0.3), size: 40),
+      child: Icon(
+        LucideIcons.film,
+        color: Colors.white.withOpacity(0.3),
+        size: 40,
+      ),
     );
   }
 }

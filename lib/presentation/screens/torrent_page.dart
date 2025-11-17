@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -8,8 +9,10 @@ import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/models/unrestricted_link_model.dart';
 import 'package:rd_client/services/api_service.dart';
 import 'package:rd_client/services/storage_service.dart';
+import 'package:rd_client/services/watch_progress_service.dart';
 import 'package:rd_client/utils/utility_functions.dart';
 import 'package:rd_client/widgets/display_tile_shimmer.dart';
+import 'package:rd_client/widgets/watch_progress_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TorrentPage extends StatefulWidget {
@@ -21,13 +24,16 @@ class TorrentPage extends StatefulWidget {
   State<TorrentPage> createState() => _TorrentPageState();
 }
 
-class _TorrentPageState extends State<TorrentPage> {
+class _TorrentPageState extends State<TorrentPage> with WidgetsBindingObserver {
   Rx<Torrent> currentTorrent = Torrent().obs;
   Timer? _fetchTimer;
+  DateTime? _videoLaunchTime;
+  String? _currentlyWatchingId;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     if (widget.torrent.status == 'downloading') {
       fetchUpdatedTorrent();
     } else {
@@ -37,8 +43,54 @@ class _TorrentPageState extends State<TorrentPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fetchTimer?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    // When user returns to the app, estimate watch progress
+    if (state == AppLifecycleState.resumed &&
+        _videoLaunchTime != null &&
+        _currentlyWatchingId != null) {
+      _saveEstimatedProgress();
+    }
+  }
+
+  Future<void> _saveEstimatedProgress() async {
+    if (_videoLaunchTime == null || _currentlyWatchingId == null) return;
+
+    final watchDuration = DateTime.now().difference(_videoLaunchTime!);
+    final watchedMilliseconds = watchDuration.inMilliseconds;
+
+    // Only save if user watched for at least 10 seconds
+    if (watchedMilliseconds < 10000) {
+      _videoLaunchTime = null;
+      _currentlyWatchingId = null;
+      return;
+    }
+
+    final existingProgress = await WatchProgressService.instance
+        .getWatchProgress(_currentlyWatchingId!);
+
+    if (existingProgress != null) {
+      final newPosition = existingProgress.position + watchedMilliseconds;
+      final updatedProgress = WatchProgress(
+        id: existingProgress.id,
+        filename: existingProgress.filename,
+        position: newPosition,
+        duration: existingProgress.duration,
+        lastWatched: DateTime.now(),
+        downloadUrl: existingProgress.downloadUrl,
+      );
+      await WatchProgressService.instance.saveWatchProgress(updatedProgress);
+    }
+
+    _videoLaunchTime = null;
+    _currentlyWatchingId = null;
   }
 
   void fetchUpdatedTorrent() async {
@@ -82,13 +134,89 @@ class _TorrentPageState extends State<TorrentPage> {
   IconData _getStatusIcon(String? status) {
     switch (status) {
       case 'uploading':
-        return Icons.cloud_upload_rounded;
+        return LucideIcons.cloudUpload;
       case 'downloading':
-        return Icons.download_rounded;
+        return LucideIcons.download;
       case 'downloaded':
-        return Icons.check_circle_rounded;
+        return LucideIcons.circleCheck;
       default:
-        return Icons.help_outline_rounded;
+        return LucideIcons.toolCase;
+    }
+  }
+
+  Future<void> _handleVideoLaunch(
+    UnrestrictedLinkModel unrestrictedLink,
+  ) async {
+    if (unrestrictedLink.download == null) return;
+
+    final videoId = WatchProgressService.generateIdFromUrl(
+      unrestrictedLink.download!,
+    );
+
+    // Check for existing watch progress
+    final existingProgress = await WatchProgressService.instance
+        .getWatchProgress(videoId);
+
+    bool shouldResume = false;
+
+    // Show resume dialog if there's existing progress and video is not fully watched
+    if (existingProgress != null &&
+        existingProgress.position > 10000 && // At least 10 seconds watched
+        !existingProgress.isWatched &&
+        mounted) {
+      final resume = await WatchProgressDialog.show(
+        context: context,
+        progress: existingProgress,
+      );
+
+      if (resume == null) return; // User dismissed dialog
+      shouldResume = resume;
+    }
+
+    // Save/update watch progress before launching
+    final progress = WatchProgress(
+      id: videoId,
+      filename: unrestrictedLink.filename ?? 'Unknown',
+      position: shouldResume ? (existingProgress?.position ?? 0) : 0,
+      duration: existingProgress?.duration ?? 0,
+      lastWatched: DateTime.now(),
+      downloadUrl: unrestrictedLink.download,
+      mediaType: 'torrent',
+      mediaTitle: currentTorrent.value.filename,
+    );
+
+    await WatchProgressService.instance.saveWatchProgress(progress);
+
+    // Track launch time for progress estimation
+    _videoLaunchTime = DateTime.now();
+    _currentlyWatchingId = videoId;
+
+    // Launch the video
+    final defaultVideoApp = await StorageService.instance.getDefaultVideoApp();
+
+    if (unrestrictedLink.streamable == 1) {
+      // Build URL with timestamp parameter for resume (some players support this)
+      String url = unrestrictedLink.download!;
+      if (shouldResume &&
+          existingProgress != null &&
+          existingProgress.position > 0) {
+        final timeInSeconds = (existingProgress.position / 1000).floor();
+        // Add timestamp parameter (works with some players like VLC, MX Player)
+        url = '$url#t=$timeInSeconds';
+      }
+
+      final intent = AndroidIntent(
+        action: 'action_view',
+        data: url,
+        package: defaultVideoApp,
+        type: 'video/*',
+      );
+      await intent.launch();
+    } else {
+      await launchUrl(
+        Uri.parse(unrestrictedLink.download!),
+        mode: LaunchMode.externalApplication,
+      );
     }
   }
 
@@ -212,7 +340,7 @@ class _TorrentPageState extends State<TorrentPage> {
                             Row(
                               children: [
                                 Icon(
-                                  Icons.storage_rounded,
+                                  LucideIcons.hardDrive,
                                   color: Colors.white.withOpacity(0.7),
                                   size: 20,
                                 ),
@@ -279,22 +407,7 @@ class _TorrentPageState extends State<TorrentPage> {
                         );
                       },
                       onTap: () async {
-                        final defaultVideoApp = await StorageService.instance
-                            .getDefaultVideoApp();
-                        if (unrestrictedLink.streamable == 1) {
-                          final intent = AndroidIntent(
-                            action: 'action_view',
-                            data: unrestrictedLink.download,
-                            package: defaultVideoApp,
-                            type: 'video/*',
-                          );
-                          intent.launch();
-                        } else {
-                          launchUrl(
-                            Uri.parse(unrestrictedLink.download ?? ''),
-                            mode: LaunchMode.externalApplication,
-                          );
-                        }
+                        await _handleVideoLaunch(unrestrictedLink);
                       },
                       child: Container(
                         padding: const EdgeInsets.all(16),
@@ -354,7 +467,7 @@ class _TorrentPageState extends State<TorrentPage> {
                 ),
               ),
               child: const Icon(
-                Icons.cloud_upload_rounded,
+                LucideIcons.cloudUpload,
                 color: Color(0xFFFF6B35),
                 size: 32,
               ),
@@ -446,7 +559,7 @@ class _TorrentPageState extends State<TorrentPage> {
                 ),
               ),
               child: const Icon(
-                Icons.download_rounded,
+                LucideIcons.download,
                 color: Color(0xFF3B82F6),
                 size: 32,
               ),
@@ -468,7 +581,7 @@ class _TorrentPageState extends State<TorrentPage> {
                   Row(
                     children: [
                       Icon(
-                        Icons.speed_rounded,
+                        LucideIcons.gauge,
                         color: const Color(0xFF10B981),
                         size: 16,
                       ),
@@ -534,149 +647,243 @@ class _TorrentPageState extends State<TorrentPage> {
     final String hostIcon = model.hostIcon ?? '';
     final String download = model.download ?? '';
     final bool streamable = model.streamable == 1;
-    return Column(
-      children: [
-        Row(
+
+    // Check for watch progress
+    final videoId = WatchProgressService.generateIdFromUrl(download);
+
+    return FutureBuilder<WatchProgress?>(
+      future: WatchProgressService.instance.getWatchProgress(videoId),
+      builder: (context, progressSnapshot) {
+        final watchProgress = progressSnapshot.data;
+        final hasProgress = watchProgress != null && watchProgress.position > 0;
+
+        return Column(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF10B981).withOpacity(0.1),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: const Color(0xFF10B981).withOpacity(0.3),
-                  width: 2,
-                ),
-              ),
-              child: Image.network(
-                hostIcon,
-                width: 32,
-                height: 32,
-                errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.image_not_supported, size: 32),
-              ),
-            ),
-            const SizedBox(width: 20),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    filename,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+            Row(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFF10B981).withOpacity(0.3),
+                      width: 2,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 8),
-                  Row(
+                  child: Image.network(
+                    hostIcon,
+                    width: 32,
+                    height: 32,
+                    errorBuilder: (_, __, ___) =>
+                        const Icon(LucideIcons.imageOff, size: 32),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (mime.isNotEmpty) ...[
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF10B981).withOpacity(0.3),
-                              width: 1,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              filename,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          child: Text(
-                            mime,
-                            style: const TextStyle(
-                              color: Color(0xFF10B981),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
+                          if (hasProgress && watchProgress.isWatched)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFF10B981,
+                                  ).withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    LucideIcons.circleCheck,
+                                    color: const Color(0xFF10B981),
+                                    size: 12,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Watched',
+                                    style: TextStyle(
+                                      color: const Color(0xFF10B981),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          if (mime.isNotEmpty) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: const Color(
+                                    0xFF10B981,
+                                  ).withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: Text(
+                                mime,
+                                style: const TextStyle(
+                                  color: Color(0xFF10B981),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              sizeText,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          sizeText,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Added: ${currentTorrent.value.added != null ? DateFormat('MMMM dd, yyyy').format(DateTime.parse(currentTorrent.value.added!)) : 'Unknown'}',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
                         ),
                       ),
+                      // Watch progress indicator
+                      if (hasProgress && !watchProgress.isWatched) ...[
+                        const SizedBox(height: 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  LucideIcons.history,
+                                  color: const Color(0xFF8B5CF6),
+                                  size: 12,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${(watchProgress.watchPercentage * 100).toStringAsFixed(0)}% watched',
+                                  style: TextStyle(
+                                    color: const Color(0xFF8B5CF6),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(2),
+                              child: LinearProgressIndicator(
+                                value: watchProgress.watchPercentage,
+                                backgroundColor: Colors.white.withOpacity(0.1),
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF8B5CF6),
+                                ),
+                                minHeight: 3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Added: ${currentTorrent.value.added != null ? DateFormat('MMMM dd, yyyy').format(DateTime.parse(currentTorrent.value.added!)) : 'Unknown'}',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 12,
+                ),
+                const SizedBox(width: 12),
+                if (download.isNotEmpty)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: streamable
+                          ? const Color(0xFF8B5CF6).withOpacity(0.2)
+                          : const Color(0xFF10B981).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: streamable
+                            ? const Color(0xFF8B5CF6).withOpacity(0.4)
+                            : const Color(0xFF10B981).withOpacity(0.4),
+                        width: 1,
+                      ),
+                    ),
+                    child: IconButton(
+                      onPressed: () async {
+                        if (streamable) {
+                          launchUrl(
+                            Uri.parse(download),
+                            mode: LaunchMode.externalNonBrowserApplication,
+                          );
+                        } else {
+                          launchUrl(
+                            Uri.parse(download),
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                      icon: Icon(
+                        streamable ? LucideIcons.play : LucideIcons.download,
+                        color: streamable
+                            ? const Color(0xFF8B5CF6)
+                            : const Color(0xFF10B981),
+                        size: 20,
+                      ),
+                      tooltip: streamable ? 'Stream' : 'Download',
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
-            const SizedBox(width: 12),
-            if (download.isNotEmpty)
-              Container(
-                decoration: BoxDecoration(
-                  color: streamable
-                      ? const Color(0xFF8B5CF6).withOpacity(0.2)
-                      : const Color(0xFF10B981).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: streamable
-                        ? const Color(0xFF8B5CF6).withOpacity(0.4)
-                        : const Color(0xFF10B981).withOpacity(0.4),
-                    width: 1,
-                  ),
-                ),
-                child: IconButton(
-                  onPressed: () async {
-                    if (streamable) {
-                      launchUrl(
-                        Uri.parse(download),
-                        mode: LaunchMode.externalNonBrowserApplication,
-                      );
-                    } else {
-                      launchUrl(
-                        Uri.parse(download),
-                        mode: LaunchMode.externalApplication,
-                      );
-                    }
-                  },
-                  icon: Icon(
-                    streamable
-                        ? Icons.play_arrow_rounded
-                        : Icons.download_rounded,
-                    color: streamable
-                        ? const Color(0xFF8B5CF6)
-                        : const Color(0xFF10B981),
-                    size: 20,
-                  ),
-                  tooltip: streamable ? 'Stream' : 'Download',
-                ),
-              ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 }

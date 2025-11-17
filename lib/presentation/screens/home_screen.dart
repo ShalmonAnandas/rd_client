@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:get/instance_manager.dart';
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 import 'package:rd_client/presentation/controllers/home_controller.dart';
 import 'package:rd_client/presentation/screens/add_torrents_screen.dart';
+import 'package:rd_client/presentation/screens/library_screen.dart';
 import 'package:rd_client/presentation/screens/search_entry_point.dart';
 import 'package:rd_client/presentation/screens/settings_screen.dart';
 import 'package:rd_client/widgets/add_magnet_dialog.dart';
@@ -98,7 +100,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       body: PageView(
         controller: pageController,
         physics: NeverScrollableScrollPhysics(),
-        children: [SearchEntryPoint(), _buildBody()],
+        children: [
+          SearchEntryPoint(),
+          _buildBody(),
+          const LibraryScreen(),
+          const SettingsScreen(),
+        ],
       ),
     );
   }
@@ -127,10 +134,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeOutCubic,
                     alignment: currentIndex.value == 0
-                        ? Alignment.centerLeft
-                        : Alignment.centerRight,
+                        ? Alignment(-1, 0)
+                        : currentIndex.value == 1
+                        ? Alignment(-0.33, 0)
+                        : currentIndex.value == 2
+                        ? Alignment(0.33, 0)
+                        : Alignment(1, 0),
                     child: FractionallySizedBox(
-                      widthFactor: 0.5,
+                      widthFactor: 0.25,
                       heightFactor: 1,
                       child: Container(
                         margin: const EdgeInsets.all(2),
@@ -144,8 +155,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   // Segmented buttons
                   Row(
                     children: [
-                      _buildSegmentedItem(0, Icons.search, 'Search'),
-                      _buildSegmentedItem(1, Icons.download, 'RD'),
+                      _buildSegmentedItem(0, LucideIcons.search, 'Search'),
+                      _buildSegmentedItem(1, LucideIcons.download, 'RD'),
+                      _buildSegmentedItem(2, LucideIcons.library, 'Library'),
+                      _buildSegmentedItem(3, LucideIcons.settings, 'Settings'),
                     ],
                   ),
                 ],
@@ -185,15 +198,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   color: isSelected ? Colors.white : Colors.grey.shade400,
                   size: 20,
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isSelected ? Colors.white : Colors.grey.shade400,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                if (isSelected) ...[
+                  const SizedBox(width: 6),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -203,15 +218,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      title: const Text('RD Client'),
-      actions: [
-        IconButton(
-          onPressed: _navigateToSettings,
-          icon: const Icon(Icons.settings),
-        ),
-      ],
-    );
+    return AppBar(title: const Text('RD Client'));
   }
 
   Widget _buildFAB() {
@@ -238,7 +245,11 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                   child: Container(
                     decoration: BoxDecoration(shape: BoxShape.circle),
                     child: const Center(
-                      child: Icon(Icons.add, color: Colors.white, size: 28),
+                      child: Icon(
+                        LucideIcons.plus,
+                        color: Colors.white,
+                        size: 28,
+                      ),
                     ),
                   ),
                 ),

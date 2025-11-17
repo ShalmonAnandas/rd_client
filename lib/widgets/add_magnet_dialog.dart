@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class AddMagnetDialog extends StatefulWidget {
   final Function(String magnetLink) onSubmit;
@@ -48,7 +49,7 @@ class _AddMagnetDialogState extends State<AddMagnetDialog> {
             color: Colors.blue[700]?.withOpacity(0.15),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(Icons.link, color: Colors.blue[300], size: 24),
+          child: Icon(LucideIcons.link, color: Colors.blue[300], size: 24),
         ),
         const SizedBox(width: 12),
         Text(

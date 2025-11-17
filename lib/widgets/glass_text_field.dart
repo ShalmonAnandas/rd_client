@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:liquid_glass_renderer/liquid_glass_renderer.dart';
 
 class GlassTextField extends StatefulWidget {
@@ -58,7 +59,7 @@ class _GlassTextFieldState extends State<GlassTextField> {
                   ),
                   border: InputBorder.none,
                   icon: Icon(
-                    Icons.search,
+                    LucideIcons.search,
                     color: Colors.white.withOpacity(0.6),
                   ),
                 ),

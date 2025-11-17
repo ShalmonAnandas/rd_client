@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:rd_client/models/torrent.dart';
@@ -96,7 +97,7 @@ class _DisplayTileState extends State<DisplayTile> {
           alignment: Alignment.centerRight,
           padding: const EdgeInsets.symmetric(horizontal: 20),
           decoration: const BoxDecoration(color: Color(0xFFB91C1C)),
-          child: const Icon(Icons.delete_rounded, color: Colors.white),
+          child: const Icon(LucideIcons.trash2, color: Colors.white),
         ),
         onDismissed: (direction) async {
           final confirmed = await showDialog<bool>(
@@ -152,7 +153,7 @@ class _DisplayTileState extends State<DisplayTile> {
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
-                          Icons.delete_rounded,
+                          LucideIcons.trash2,
                           color: Color(0xFFB91C1C),
                           size: 32,
                         ),
@@ -341,7 +342,7 @@ class _DisplayTileState extends State<DisplayTile> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
-              Icons.cloud_upload_rounded,
+              LucideIcons.cloudUpload,
               color: Color(0xFFFF6B35),
               size: 18,
             ),
@@ -415,7 +416,7 @@ class _DisplayTileState extends State<DisplayTile> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
-                  Icons.download_rounded,
+                  LucideIcons.download,
                   color: Color(0xFF3B82F6),
                   size: 18,
                 ),
@@ -476,7 +477,7 @@ class _DisplayTileState extends State<DisplayTile> {
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: const Icon(
-                  Icons.speed_rounded,
+                  LucideIcons.gauge,
                   color: Color(0xFF10B981),
                   size: 16,
                 ),
@@ -526,7 +527,7 @@ class _DisplayTileState extends State<DisplayTile> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
-              Icons.check_circle_rounded,
+              LucideIcons.circleCheck,
               color: Color(0xFF10B981),
               size: 18,
             ),

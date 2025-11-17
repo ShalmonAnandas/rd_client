@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:get/get.dart';
 import 'package:rd_client/presentation/controllers/settings_controller.dart';
 
@@ -39,6 +40,8 @@ class SettingsScreen extends StatelessWidget {
               _buildApiConfigurationSection(controller),
               const SizedBox(height: 20),
               _buildVideoAppSection(controller),
+              const SizedBox(height: 20),
+              _buildTorrentioConfigSection(controller),
               const SizedBox(height: 20),
               _buildDebugSection(controller),
             ],
@@ -100,7 +103,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildApiConfigurationSection(SettingsController controller) {
     return _buildSectionContainer(
       title: 'Real Debrid API Token',
-      icon: Icons.vpn_key_rounded,
+      icon: LucideIcons.key,
       iconColor: const Color(0xFF3B82F6),
       child: Column(
         children: [
@@ -140,7 +143,7 @@ class SettingsScreen extends StatelessWidget {
         child: Row(
           children: [
             const Icon(
-              Icons.check_circle_rounded,
+              LucideIcons.circleCheck,
               color: Color(0xFF10B981),
               size: 18,
             ),
@@ -172,7 +175,7 @@ class SettingsScreen extends StatelessWidget {
             IconButton(
               onPressed: controller.enableTokenEditing,
               icon: const Icon(
-                Icons.edit_rounded,
+                LucideIcons.pencil,
                 color: Color(0xFF9CA3AF),
                 size: 18,
               ),
@@ -271,7 +274,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildVideoAppSection(SettingsController controller) {
     return _buildSectionContainer(
       title: 'Default Video App',
-      icon: Icons.video_library_rounded,
+      icon: LucideIcons.library,
       iconColor: const Color(0xFF8B5CF6),
       child: Obx(() => _buildVideoAppDropdown(controller)),
     );
@@ -300,7 +303,7 @@ class SettingsScreen extends StatelessWidget {
         ),
         child: const Row(
           children: [
-            Icon(Icons.info_rounded, color: Color(0xFFF59E0B), size: 18),
+            Icon(LucideIcons.info, color: Color(0xFFF59E0B), size: 18),
             SizedBox(width: 12),
             Text(
               'No video apps found on device',
@@ -353,7 +356,7 @@ class SettingsScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
+                        LucideIcons.chevronDown,
                         color: Color(0xFF9CA3AF),
                         size: 16,
                       ),
@@ -376,7 +379,7 @@ class SettingsScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Icon(
-                                Icons.devices_rounded,
+                                LucideIcons.monitor,
                                 size: 16,
                                 color: Color(0xFF9CA3AF),
                               ),
@@ -425,7 +428,7 @@ class SettingsScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: const Icon(
-                                  Icons.play_circle_outline_rounded,
+                                  LucideIcons.circlePlay,
                                   size: 16,
                                   color: Color(0xFF8B5CF6),
                                 ),
@@ -484,7 +487,7 @@ class SettingsScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: const Icon(
-                              Icons.devices_rounded,
+                              LucideIcons.monitor,
                               size: 16,
                               color: Color(0xFF9CA3AF),
                             ),
@@ -518,7 +521,7 @@ class SettingsScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: const Icon(
-                                Icons.play_circle_outline_rounded,
+                                LucideIcons.circlePlay,
                                 size: 16,
                                 color: Color(0xFF8B5CF6),
                               ),
@@ -554,7 +557,7 @@ class SettingsScreen extends StatelessWidget {
   Widget _buildDebugSection(SettingsController controller) {
     return _buildSectionContainer(
       title: 'Debug Tools',
-      icon: Icons.developer_mode_rounded,
+      icon: LucideIcons.code,
       iconColor: const Color(0xFFFF6B35),
       child: SizedBox(
         width: double.infinity,
@@ -568,10 +571,330 @@ class SettingsScreen extends StatelessWidget {
             ),
             padding: const EdgeInsets.symmetric(vertical: 12),
           ),
-          icon: const Icon(Icons.bug_report_rounded, size: 18),
+          icon: const Icon(LucideIcons.bug, size: 18),
           label: const Text('View API Calls'),
         ),
       ),
+    );
+  }
+
+  Widget _buildTorrentioConfigSection(SettingsController controller) {
+    return _buildSectionContainer(
+      title: 'Torrentio Configuration',
+      icon: LucideIcons.radio,
+      iconColor: const Color(0xFF10B981),
+      child: Obx(
+        () => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProvidersConfig(controller),
+            const SizedBox(height: 16),
+            _buildQualityConfig(controller),
+            const SizedBox(height: 16),
+            _buildSortConfig(controller),
+            const SizedBox(height: 16),
+            _buildLanguageConfig(controller),
+            const SizedBox(height: 16),
+            _buildExclusionsConfig(controller),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProvidersConfig(SettingsController controller) {
+    final providers = [
+      {'id': 'yts', 'name': 'YTS'},
+      {'id': 'eztv', 'name': 'EZTV'},
+      {'id': 'rarbg', 'name': 'RARBG'},
+      {'id': '1337x', 'name': '1337x'},
+      {'id': 'thepiratebay', 'name': 'The Pirate Bay'},
+      {'id': 'kickass', 'name': 'KickassTorrents'},
+      {'id': 'torrentgalaxy', 'name': 'TorrentGalaxy'},
+      {'id': 'magnetdl', 'name': 'MagnetDL'},
+      {'id': 'horriblesubs', 'name': 'HorribleSubs'},
+      {'id': 'nyaasi', 'name': 'Nyaa.si'},
+      {'id': 'tokyotosho', 'name': 'TokyoTosho'},
+      {'id': 'anidex', 'name': 'AniDex'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Providers',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFFF3F4F6),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: providers.map((provider) {
+            final isSelected = controller.selectedProviders.contains(
+              provider['id'],
+            );
+            return FilterChip(
+              label: Text(provider['name']!),
+              selected: isSelected,
+              onSelected: (_) => controller.toggleProvider(provider['id']!),
+              backgroundColor: const Color(0xFF0F1419),
+              selectedColor: const Color(0xFF10B981).withOpacity(0.2),
+              labelStyle: TextStyle(
+                color: isSelected
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFF9CA3AF),
+                fontSize: 12,
+              ),
+              side: BorderSide(
+                color: isSelected
+                    ? const Color(0xFF10B981)
+                    : const Color(0xFF2D3748),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQualityConfig(SettingsController controller) {
+    final qualities = [
+      {'id': '4k', 'name': '4K'},
+      {'id': '1080p', 'name': '1080p'},
+      {'id': '720p', 'name': '720p'},
+      {'id': '480p', 'name': '480p'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Quality Filter (Multi-Select)',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFFF3F4F6),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: qualities.map((quality) {
+            final isSelected = controller.selectedQualities.contains(
+              quality['id'],
+            );
+            return FilterChip(
+              label: Text(quality['name']!),
+              selected: isSelected,
+              onSelected: (_) => controller.toggleQuality(quality['id']!),
+              backgroundColor: const Color(0xFF0F1419),
+              selectedColor: const Color(0xFF3B82F6).withOpacity(0.2),
+              labelStyle: TextStyle(
+                color: isSelected
+                    ? const Color(0xFF3B82F6)
+                    : const Color(0xFF9CA3AF),
+                fontSize: 12,
+              ),
+              side: BorderSide(
+                color: isSelected
+                    ? const Color(0xFF3B82F6)
+                    : const Color(0xFF2D3748),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSortConfig(SettingsController controller) {
+    final sortOptions = [
+      {'id': 'quality', 'name': 'Quality', 'icon': LucideIcons.sparkles},
+      {'id': 'seeders', 'name': 'Seeders', 'icon': LucideIcons.users},
+      {'id': 'size', 'name': 'Size', 'icon': LucideIcons.hardDrive},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Sort By',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFFF3F4F6),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: sortOptions.map((sort) {
+            final isSelected = controller.selectedSort.value == sort['id'];
+            final sortId = sort['id'] as String;
+            final sortName = sort['name'] as String;
+            final sortIcon = sort['icon'] as IconData;
+            return ChoiceChip(
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    sortIcon,
+                    size: 14,
+                    color: isSelected
+                        ? const Color(0xFF8B5CF6)
+                        : const Color(0xFF9CA3AF),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(sortName),
+                ],
+              ),
+              selected: isSelected,
+              onSelected: (_) => controller.setSortOption(sortId),
+              backgroundColor: const Color(0xFF0F1419),
+              selectedColor: const Color(0xFF8B5CF6).withOpacity(0.2),
+              labelStyle: TextStyle(
+                color: isSelected
+                    ? const Color(0xFF8B5CF6)
+                    : const Color(0xFF9CA3AF),
+                fontSize: 12,
+              ),
+              side: BorderSide(
+                color: isSelected
+                    ? const Color(0xFF8B5CF6)
+                    : const Color(0xFF2D3748),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLanguageConfig(SettingsController controller) {
+    final languages = [
+      {'id': '', 'name': 'All'},
+      {'id': 'english', 'name': 'English'},
+      {'id': 'spanish', 'name': 'Spanish'},
+      {'id': 'french', 'name': 'French'},
+      {'id': 'german', 'name': 'German'},
+      {'id': 'italian', 'name': 'Italian'},
+      {'id': 'portuguese', 'name': 'Portuguese'},
+      {'id': 'russian', 'name': 'Russian'},
+      {'id': 'japanese', 'name': 'Japanese'},
+      {'id': 'korean', 'name': 'Korean'},
+      {'id': 'chinese', 'name': 'Chinese'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Language Filter',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFFF3F4F6),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: const Color(0xFF0F1419),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFF2D3748), width: 1),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: controller.selectedLanguage.value.isEmpty
+                  ? ''
+                  : controller.selectedLanguage.value,
+              dropdownColor: const Color(0xFF1F2937),
+              style: const TextStyle(color: Color(0xFFF9FAFB), fontSize: 14),
+              icon: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8.0),
+                child: Icon(
+                  LucideIcons.chevronDown,
+                  color: Color(0xFF9CA3AF),
+                  size: 16,
+                ),
+              ),
+              isExpanded: true,
+              borderRadius: BorderRadius.circular(12),
+              items: languages.map((lang) {
+                return DropdownMenuItem<String>(
+                  value: lang['id']!,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(lang['name']!),
+                  ),
+                );
+              }).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  controller.setLanguage(value);
+                }
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExclusionsConfig(SettingsController controller) {
+    final exclusions = [
+      {'id': 'excludecam', 'name': 'Exclude CAM'},
+      {'id': 'excludets', 'name': 'Exclude TeleSync'},
+      {'id': 'excludelow', 'name': 'Exclude Low Quality'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Exclusions',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFFF3F4F6),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: exclusions.map((exclusion) {
+            final isSelected = controller.selectedExclusions.contains(
+              exclusion['id'],
+            );
+            return FilterChip(
+              label: Text(exclusion['name']!),
+              selected: isSelected,
+              onSelected: (_) => controller.toggleExclusion(exclusion['id']!),
+              backgroundColor: const Color(0xFF0F1419),
+              selectedColor: const Color(0xFFEF4444).withOpacity(0.2),
+              labelStyle: TextStyle(
+                color: isSelected
+                    ? const Color(0xFFEF4444)
+                    : const Color(0xFF9CA3AF),
+                fontSize: 12,
+              ),
+              side: BorderSide(
+                color: isSelected
+                    ? const Color(0xFFEF4444)
+                    : const Color(0xFF2D3748),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:get/get.dart';
 import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/presentation/controllers/add_torrents_controller.dart';
@@ -70,7 +71,7 @@ class AddTorrentsScreen extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      Icons.cloud_download,
+                      LucideIcons.cloudDownload,
                       color: Colors.blue[300],
                       size: 28,
                     ),
@@ -90,7 +91,11 @@ class AddTorrentsScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.sd_storage, color: Colors.grey[400], size: 20),
+                    Icon(
+                      LucideIcons.hardDrive,
+                      color: Colors.grey[400],
+                      size: 20,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       'Size: ',
