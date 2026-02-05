@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:rd_client/services/storage_service.dart';
 import 'package:rd_client/services/video_launcher.dart';
 import 'package:rd_client/services/watch_progress_service.dart';
+import 'package:rd_client/utils/responsive_constants.dart';
 import 'package:rd_client/widgets/responsive_body.dart';
 import 'package:rd_client/widgets/watch_progress_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,8 +21,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
   List<WatchProgress> _watchHistory = [];
   bool _isLoading = true;
   String _filterType = 'all'; // 'all', 'movies', 'tv', 'torrents'
-  static const double _largeScreenBreakpoint = 1000;
-  static const double _mediumScreenBreakpoint = 760;
 
   @override
   void initState() {
@@ -85,8 +84,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   int _getCrossAxisCount(double width) {
-    if (width >= _largeScreenBreakpoint) return 4;
-    if (width >= _mediumScreenBreakpoint) return 3;
+    if (width >= ResponsiveConstants.largeScreenBreakpoint) return 4;
+    if (width >= ResponsiveConstants.mediumScreenBreakpoint) return 3;
     return 2;
   }
 
