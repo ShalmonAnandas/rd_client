@@ -58,6 +58,8 @@ RD Client is a cross-platform Flutter application that provides a feature-rich i
 - Uses the `vercel.json` configuration to install Flutter and build the web app
 - Build command: `flutter build web --release`
 - Output directory: `build/web`
+- Web builds currently use an in-memory cache, so watch history and cached media
+  data reset after a page refresh
 
 ## Technical Stack
 
