@@ -36,7 +36,7 @@ class AddTorrentsController extends GetxController {
       if (kIsWeb) {
         Get.snackbar(
           'Unsupported on Web',
-          'Torrent file uploads are not available on web yet.',
+          'Torrent file uploads are not available on web.',
           snackPosition: SnackPosition.BOTTOM,
         );
         return;

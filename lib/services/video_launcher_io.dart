@@ -29,6 +29,6 @@ Future<void> launchVideoImpl({
   final uri = Uri.parse(url);
   final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
   if (!launched) {
-    throw Exception('Could not launch video');
+    throw Exception('Could not launch video: $url');
   }
 }
