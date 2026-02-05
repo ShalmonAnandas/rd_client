@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:get/get.dart';
 import 'package:rd_client/presentation/controllers/settings_controller.dart';
+import 'package:rd_client/widgets/responsive_body.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -9,11 +11,14 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(SettingsController());
+    final isWeb = kIsWeb;
 
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await controller.loadToken();
-      await controller.loadVideoApps();
+      if (!isWeb) {
+        await controller.loadVideoApps();
+      }
     });
 
     return Scaffold(
@@ -32,22 +37,26 @@ class SettingsScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Column(
-            children: [
-              _buildApiConfigurationSection(controller),
-              const SizedBox(height: 20),
-              _buildVideoAppSection(controller),
-              const SizedBox(height: 20),
-              _buildTorrentioConfigSection(controller),
-              const SizedBox(height: 20),
-              _buildDebugSection(controller),
-            ],
-          ),
-        ),
-      ),
+       body: SafeArea(
+         child: ResponsiveBody(
+           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+           child: SingleChildScrollView(
+             child: Column(
+               children: [
+                 _buildApiConfigurationSection(controller),
+                 if (!isWeb) ...[
+                   const SizedBox(height: 20),
+                   _buildVideoAppSection(controller),
+                 ],
+                 const SizedBox(height: 20),
+                 _buildTorrentioConfigSection(controller),
+                 const SizedBox(height: 20),
+                 _buildDebugSection(controller),
+               ],
+             ),
+           ),
+         ),
+       ),
     );
   }
 

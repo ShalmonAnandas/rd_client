@@ -126,94 +126,99 @@ class _SearchEntryPointState extends State<SearchEntryPoint>
           );
         }),
         // Main content
-        Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedBuilder(
-              animation: _textController,
-              builder: (context, child) {
-                return Column(
-                  children: [
-                    FadeTransition(
-                      opacity: _fadeAnimation1,
-                      child: SlideTransition(
-                        position: _slideAnimation1,
-                        child: Text(
-                          'What are we',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.95),
-                            fontSize: 32,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: -0.3,
-                            height: 1.2,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    FadeTransition(
-                      opacity: _fadeAnimation2,
-                      child: SlideTransition(
-                        position: _slideAnimation2,
-                        child: Text(
-                          'Watching Today?',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 42,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.8,
-                            height: 1.2,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black.withOpacity(0.3),
-                                offset: const Offset(0, 2),
-                                blurRadius: 8,
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedBuilder(
+                  animation: _textController,
+                  builder: (context, child) {
+                    return Column(
+                      children: [
+                        FadeTransition(
+                          opacity: _fadeAnimation1,
+                          child: SlideTransition(
+                            position: _slideAnimation1,
+                            child: Text(
+                              'What are we',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.95),
+                                fontSize: 32,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: -0.3,
+                                height: 1.2,
                               ),
-                            ],
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Hero(
-                tag: 'search_textfield',
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder:
-                                (context, animation, secondaryAnimation) =>
-                                    const SearchScreen(),
-                            transitionDuration: const Duration(
-                              milliseconds: 400,
+                        const SizedBox(height: 4),
+                        FadeTransition(
+                          opacity: _fadeAnimation2,
+                          child: SlideTransition(
+                            position: _slideAnimation2,
+                            child: Text(
+                              'Watching Today?',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 42,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.8,
+                                height: 1.2,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    offset: const Offset(0, 2),
+                                    blurRadius: 8,
+                                  ),
+                                ],
+                              ),
                             ),
-                            reverseTransitionDuration: const Duration(
-                              milliseconds: 400,
-                            ),
-                            opaque: false,
                           ),
-                        );
-                      },
-                      child: GlassTextField(enabled: false),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Hero(
+                    tag: 'search_textfield',
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder:
+                                    (context, animation, secondaryAnimation) =>
+                                        const SearchScreen(),
+                                transitionDuration: const Duration(
+                                  milliseconds: 400,
+                                ),
+                                reverseTransitionDuration: const Duration(
+                                  milliseconds: 400,
+                                ),
+                                opaque: false,
+                              ),
+                            );
+                          },
+                          child: GlassTextField(enabled: false),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
       ],
     );

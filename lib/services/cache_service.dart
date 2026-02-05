@@ -1,8 +1,9 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sembast/sembast.dart';
-import 'package:sembast/sembast_io.dart';
+import 'package:rd_client/services/database_factory.dart';
 
 class CacheService {
   CacheService._();
@@ -23,10 +24,14 @@ class CacheService {
   }
 
   Future<Database> _initDatabase() async {
+    final factory = getDatabaseFactory();
+    if (kIsWeb) {
+      return factory.openDatabase('cache.db');
+    }
     final appDocDir = await getApplicationDocumentsDirectory();
     await appDocDir.create(recursive: true);
     final dbPath = join(appDocDir.path, 'cache.db');
-    return await databaseFactoryIo.openDatabase(dbPath);
+    return await factory.openDatabase(dbPath);
   }
 
   // Media Details Cache

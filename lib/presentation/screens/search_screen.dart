@@ -6,6 +6,7 @@ import 'package:rd_client/presentation/controllers/search_controller.dart'
     as search_ctrl;
 import 'package:rd_client/presentation/screens/media_details_screen.dart';
 import 'package:rd_client/widgets/glass_text_field.dart';
+import 'package:rd_client/widgets/responsive_body.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -50,90 +51,93 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           leadingWidth: 30,
         ),
-        body: Obx(() {
-          if (searchController.query.value.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    LucideIcons.search,
-                    size: 64,
-                    color: Colors.white.withOpacity(0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Search for movies and TV shows',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 16,
+        body: ResponsiveBody(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Obx(() {
+            if (searchController.query.value.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      LucideIcons.search,
+                      size: 64,
+                      color: Colors.white.withOpacity(0.3),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          if (searchController.isLoading.value) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (searchController.errorMessage.value.isNotEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    LucideIcons.circleAlert,
-                    size: 64,
-                    color: Colors.red.withOpacity(0.7),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    searchController.errorMessage.value,
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 16,
+                    const SizedBox(height: 16),
+                    Text(
+                      'Search for movies and TV shows',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 16,
+                      ),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            );
-          }
+                  ],
+                ),
+              );
+            }
 
-          if (searchController.searchResults.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    LucideIcons.searchX,
-                    size: 64,
-                    color: Colors.white.withOpacity(0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No results found',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 16,
+            if (searchController.isLoading.value) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (searchController.errorMessage.value.isNotEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      LucideIcons.circleAlert,
+                      size: 64,
+                      color: Colors.red.withOpacity(0.7),
                     ),
-                  ),
-                ],
-              ),
-            );
-          }
+                    const SizedBox(height: 16),
+                    Text(
+                      searchController.errorMessage.value,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: searchController.searchResults.length,
-            itemBuilder: (context, index) {
-              final media = searchController.searchResults[index];
-              return _buildMediaCard(media);
-            },
-          );
-        }),
+            if (searchController.searchResults.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      LucideIcons.searchX,
+                      size: 64,
+                      color: Colors.white.withOpacity(0.3),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No results found',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              itemCount: searchController.searchResults.length,
+              itemBuilder: (context, index) {
+                final media = searchController.searchResults[index];
+                return _buildMediaCard(media);
+              },
+            );
+          }),
+        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 import 'package:rd_client/presentation/screens/home_screen.dart';
@@ -16,7 +17,8 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      navigatorKey: AppConstants.alice.getNavigatorKey(),
+      navigatorKey:
+          kIsWeb ? GlobalKey<NavigatorState>() : AppConstants.alice.getNavigatorKey(),
       theme: ThemeData.dark(),
       home: HomeScreen(),
     );

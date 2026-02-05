@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/presentation/screens/home_screen.dart';
@@ -32,6 +33,14 @@ class AddTorrentsController extends GetxController {
           ? await ApiService.instance.addMagnet(magnetLink!)
           : addedTorrent.value!.id;
     } else {
+      if (kIsWeb) {
+        Get.snackbar(
+          'Unsupported on Web',
+          'Torrent file uploads are not available on web yet.',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
       id = addedTorrent.value == null
           ? await ApiService.instance.addTorrent(magnetLink!)
           : addedTorrent.value!.id;

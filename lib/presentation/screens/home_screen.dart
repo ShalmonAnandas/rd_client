@@ -112,56 +112,64 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _buildGlassBottomNav() {
     return Obx(
-      () => Container(
-        margin: const EdgeInsets.all(24),
-        height: 56,
-        child: LiquidGlassLayer(
-          settings: const LiquidGlassSettings(
-            thickness: 20,
-            blur: 2,
-            refractiveIndex: 2,
-          ),
-          child: LiquidGlass(
-            shape: LiquidRoundedSuperellipse(borderRadius: 50),
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(color: Colors.black.withOpacity(0.2)),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Animated sliding indicator
-                  AnimatedAlign(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOutCubic,
-                    alignment: currentIndex.value == 0
-                        ? Alignment(-1, 0)
-                        : currentIndex.value == 1
-                        ? Alignment(-0.33, 0)
-                        : currentIndex.value == 2
-                        ? Alignment(0.33, 0)
-                        : Alignment(1, 0),
-                    child: FractionallySizedBox(
-                      widthFactor: 0.25,
-                      heightFactor: 1,
-                      child: Container(
-                        margin: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(50),
+      () => Align(
+        alignment: Alignment.center,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 560),
+          child: Container(
+            margin: const EdgeInsets.all(24),
+            height: 56,
+            child: LiquidGlassLayer(
+              settings: const LiquidGlassSettings(
+                thickness: 20,
+                blur: 2,
+                refractiveIndex: 2,
+              ),
+              child: LiquidGlass(
+                shape: LiquidRoundedSuperellipse(borderRadius: 50),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.2),
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Animated sliding indicator
+                      AnimatedAlign(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOutCubic,
+                        alignment: currentIndex.value == 0
+                            ? Alignment(-1, 0)
+                            : currentIndex.value == 1
+                            ? Alignment(-0.33, 0)
+                            : currentIndex.value == 2
+                            ? Alignment(0.33, 0)
+                            : Alignment(1, 0),
+                        child: FractionallySizedBox(
+                          widthFactor: 0.25,
+                          heightFactor: 1,
+                          child: Container(
+                            margin: const EdgeInsets.all(2),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  // Segmented buttons
-                  Row(
-                    children: [
-                      _buildSegmentedItem(0, LucideIcons.search, 'Search'),
-                      _buildSegmentedItem(1, LucideIcons.download, 'RD'),
-                      _buildSegmentedItem(2, LucideIcons.library, 'Library'),
-                      _buildSegmentedItem(3, LucideIcons.settings, 'Settings'),
+                      // Segmented buttons
+                      Row(
+                        children: [
+                          _buildSegmentedItem(0, LucideIcons.search, 'Search'),
+                          _buildSegmentedItem(1, LucideIcons.download, 'RD'),
+                          _buildSegmentedItem(2, LucideIcons.library, 'Library'),
+                          _buildSegmentedItem(3, LucideIcons.settings, 'Settings'),
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

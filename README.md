@@ -54,6 +54,11 @@ RD Client is a cross-platform Flutter application that provides a feature-rich i
 - iOS compatibility
 - Support for macOS, Windows, Linux, and Web platforms
 
+### Web Deployment (Vercel)
+- Uses the `vercel.json` configuration to install Flutter and build the web app
+- Build command: `flutter build web --release`
+- Output directory: `build/web`
+
 ## Technical Stack
 
 - **Framework:** Flutter 3.8+
