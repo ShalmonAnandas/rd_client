@@ -73,7 +73,7 @@ class SettingsController extends GetxController {
         if (kIsWeb) {
           Get.dialog(
             AlertDialog(
-              title: const Text('Refresh required'),
+              title: const Text('Refresh Required'),
               content: const Text(
                 'Please refresh the page to apply the updated token.',
               ),
