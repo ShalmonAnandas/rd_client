@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/presentation/controllers/add_torrents_controller.dart';
 import 'package:rd_client/utils/utility_functions.dart';
+import 'package:rd_client/widgets/responsive_body.dart';
 
 class AddTorrentsScreen extends StatelessWidget {
   const AddTorrentsScreen({super.key, this.magnetLink, this.addedTorrent})
@@ -38,7 +39,7 @@ class AddTorrentsScreen extends StatelessWidget {
           elevation: 0,
           foregroundColor: Colors.white,
         ),
-        bottomNavigationBar: Padding(
+        bottomNavigationBar: ResponsiveBody(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
           child: SizedBox(
             width: double.infinity,
@@ -63,7 +64,7 @@ class AddTorrentsScreen extends StatelessWidget {
           ),
         ),
         body: SafeArea(
-          child: Padding(
+          child: ResponsiveBody(
             padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,11 +1,12 @@
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:get/get.dart';
 import 'package:rd_client/models/torrentio_stream_model.dart';
 import 'package:rd_client/presentation/controllers/streaming_links_controller.dart';
 import 'package:rd_client/services/storage_service.dart';
+import 'package:rd_client/services/video_launcher.dart';
 import 'package:rd_client/services/watch_progress_service.dart';
+import 'package:rd_client/widgets/responsive_body.dart';
 import 'package:rd_client/widgets/watch_progress_dialog.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -141,86 +142,89 @@ class _StreamingLinksScreenState extends State<StreamingLinksScreen>
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Obx(() {
-        if (controller.isLoading.value) {
-          return _buildLoadingShimmer();
-        }
+      body: ResponsiveBody(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return _buildLoadingShimmer();
+          }
 
-        if (controller.errorMessage.value.isNotEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  LucideIcons.circleAlert,
-                  size: 64,
-                  color: Colors.red.withOpacity(0.7),
-                ),
-                const SizedBox(height: 16),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
-                  child: Text(
-                    controller.errorMessage.value,
+          if (controller.errorMessage.value.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    LucideIcons.circleAlert,
+                    size: 64,
+                    color: Colors.red.withOpacity(0.7),
+                  ),
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    child: Text(
+                      controller.errorMessage.value,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 16,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: controller.loadStreams,
+                    icon: const Icon(LucideIcons.refreshCw),
+                    label: const Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          final streams = controller.streams;
+          if (streams.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    LucideIcons.library,
+                    size: 64,
+                    color: Colors.white.withOpacity(0.3),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'No streams available',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
                       fontSize: 16,
                     ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Try again later or check your RealDebrid account',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.5),
+                      fontSize: 14,
+                    ),
                     textAlign: TextAlign.center,
                   ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: controller.loadStreams,
-                  icon: const Icon(LucideIcons.refreshCw),
-                  label: const Text('Retry'),
-                ),
-              ],
-            ),
-          );
-        }
+                ],
+              ),
+            );
+          }
 
-        final streams = controller.streams;
-        if (streams.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  LucideIcons.library,
-                  size: 64,
-                  color: Colors.white.withOpacity(0.3),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No streams available',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Try again later or check your RealDebrid account',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            itemCount: streams.length,
+            itemBuilder: (context, index) {
+              final stream = streams[index];
+              return _buildStreamCard(stream);
+            },
           );
-        }
-
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: streams.length,
-          itemBuilder: (context, index) {
-            final stream = streams[index];
-            return _buildStreamCard(stream);
-          },
-        );
-      }),
+        }),
+      ),
     );
   }
 
@@ -429,20 +433,11 @@ class _StreamingLinksScreenState extends State<StreamingLinksScreen>
 
       // Launch the Torrentio URL directly with Android Intent
       // Add HTTP headers for Real-Debrid compatibility
-      final intent = AndroidIntent(
-        action: 'action_view',
-        data: url,
-        package: defaultVideoApp,
-        type: 'video/*',
-        arguments: {
-          'headers': {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Referer': 'https://torrentio.strem.fun/',
-          },
-        },
+      await launchVideo(
+        url: url,
+        defaultVideoApp: defaultVideoApp,
+        referer: 'https://torrentio.strem.fun/',
       );
-      await intent.launch();
     } catch (e) {
       // Fallback to url_launcher if AndroidIntent fails
       try {
@@ -472,7 +467,7 @@ class _StreamingLinksScreenState extends State<StreamingLinksScreen>
 
   Widget _buildLoadingShimmer() {
     return ListView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       itemCount: 10,
       itemBuilder: (context, index) {
         return Shimmer.fromColors(

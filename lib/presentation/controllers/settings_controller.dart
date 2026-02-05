@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rd_client/services/storage_service.dart';
@@ -68,10 +69,20 @@ class SettingsController extends GetxController {
       await StorageService.instance.storeToken(tokenController.text.trim());
       isTokenEditable.value = false;
       if (toRestart.value) {
-        Restart.restartApp(
-          notificationTitle: 'Restarting App',
-          notificationBody: 'Please tap here to open the app again.',
-        );
+        if (kIsWeb) {
+          Get.snackbar(
+            'Token saved',
+            'Please refresh the page to apply the updated token.',
+            snackPosition: SnackPosition.BOTTOM,
+            backgroundColor: Colors.blueGrey.withOpacity(0.8),
+            colorText: Colors.white,
+          );
+        } else {
+          Restart.restartApp(
+            notificationTitle: 'Restarting App',
+            notificationBody: 'Please tap here to open the app again.',
+          );
+        }
       }
     } catch (e) {
       debugPrint('Error saving token: $e');
@@ -81,7 +92,9 @@ class SettingsController extends GetxController {
   }
 
   void showApiCalls() {
-    AppConstants.alice.showInspector();
+    if (!kIsWeb) {
+      AppConstants.alice.showInspector();
+    }
   }
 
   Future<void> loadVideoApps() async {

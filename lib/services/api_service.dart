@@ -1,7 +1,6 @@
-import 'dart:io';
-
 import 'package:alice_dio/alice_dio_adapter.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:rd_client/models/media_details_model.dart';
 import 'package:rd_client/models/media_model.dart';
@@ -10,6 +9,7 @@ import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/models/torrentio_stream_model.dart';
 import 'package:rd_client/models/unrestricted_link_model.dart';
 import 'package:rd_client/services/cache_service.dart';
+import 'package:rd_client/services/file_reader.dart';
 import 'package:rd_client/services/storage_service.dart';
 import 'package:rd_client/utils/app_constants.dart';
 
@@ -30,11 +30,11 @@ class ApiService {
       ),
     );
 
-    AliceDioAdapter aliceAdapter = AliceDioAdapter();
-
-    AppConstants.alice.addAdapter(aliceAdapter);
-
-    _dio.interceptors.add(aliceAdapter);
+    if (!kIsWeb) {
+      AliceDioAdapter aliceAdapter = AliceDioAdapter();
+      AppConstants.alice.addAdapter(aliceAdapter);
+      _dio.interceptors.add(aliceAdapter);
+    }
   }
 
   static final ApiService instance = ApiService._();
@@ -105,8 +105,11 @@ class ApiService {
 
   Future<String?> addTorrent(String filePath) async {
     try {
+      if (kIsWeb) {
+        throw UnsupportedError('Torrent file uploads are not supported on web');
+      }
       // Read the file as raw bytes
-      final file = await File(filePath).readAsBytes();
+      final file = await getFileReader().readBytes(filePath);
 
       final response = await _dio.put(
         '${AppConstants.rdBaseUrl}/torrents/addTorrent',

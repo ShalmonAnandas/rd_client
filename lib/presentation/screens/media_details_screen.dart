@@ -6,6 +6,7 @@ import 'package:rd_client/models/season_model.dart';
 import 'package:rd_client/presentation/controllers/media_details_controller.dart';
 import 'package:rd_client/presentation/screens/streaming_links_screen.dart';
 import 'package:rd_client/services/watch_progress_service.dart';
+import 'package:rd_client/widgets/responsive_body.dart';
 import 'package:shimmer/shimmer.dart';
 
 class MediaDetailsScreen extends StatefulWidget {
@@ -120,7 +121,7 @@ class _MediaDetailsScreenState extends State<MediaDetailsScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeroSection(context, media, screenHeight, screenWidth),
-          Padding(
+          ResponsiveBody(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

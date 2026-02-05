@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/services.dart';
@@ -9,6 +8,7 @@ import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/models/unrestricted_link_model.dart';
 import 'package:rd_client/services/api_service.dart';
 import 'package:rd_client/services/storage_service.dart';
+import 'package:rd_client/services/video_launcher.dart';
 import 'package:rd_client/services/watch_progress_service.dart';
 import 'package:rd_client/utils/utility_functions.dart';
 import 'package:rd_client/widgets/display_tile_shimmer.dart';
@@ -205,21 +205,11 @@ class _TorrentPageState extends State<TorrentPage> with WidgetsBindingObserver {
         url = '$url#t=$timeInSeconds';
       }
 
-      // Add HTTP headers for Real-Debrid compatibility
-      final intent = AndroidIntent(
-        action: 'action_view',
-        data: url,
-        package: defaultVideoApp,
-        type: 'video/*',
-        arguments: {
-          'headers': {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Referer': 'https://real-debrid.com/',
-          },
-        },
-      );
-      await intent.launch();
+       await launchVideo(
+         url: url,
+         defaultVideoApp: defaultVideoApp,
+         referer: 'https://real-debrid.com/',
+       );
     } else {
       await launchUrl(
         Uri.parse(unrestrictedLink.download!),

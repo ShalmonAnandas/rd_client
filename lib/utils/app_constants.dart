@@ -1,5 +1,6 @@
 import 'package:alice/alice.dart';
 import 'package:alice/model/alice_configuration.dart';
+import 'package:flutter/foundation.dart';
 
 class AppConstants {
   static String rdBaseUrl = 'https://api.real-debrid.com/rest/1.0';
@@ -10,7 +11,7 @@ class AppConstants {
 
   static Alice alice = Alice(
     configuration: AliceConfiguration(
-      showInspectorOnShake: true,
+      showInspectorOnShake: !kIsWeb,
       showNotification: false,
     ),
   );

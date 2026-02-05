@@ -1,9 +1,10 @@
-import 'package:android_intent_plus/android_intent.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
 import 'package:rd_client/services/storage_service.dart';
+import 'package:rd_client/services/video_launcher.dart';
 import 'package:rd_client/services/watch_progress_service.dart';
+import 'package:rd_client/widgets/responsive_body.dart';
 import 'package:rd_client/widgets/watch_progress_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -56,21 +57,35 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0F0F0F),
-      body: CustomScrollView(
-        slivers: [
-          _buildAppBar(),
-          _buildFilterChips(),
-          if (_isLoading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (_filteredHistory.isEmpty)
-            _buildEmptyState()
-          else
-            _buildWatchHistoryGrid(),
-        ],
+      body: ResponsiveBody(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final crossAxisCount = _getCrossAxisCount(constraints.maxWidth);
+            return CustomScrollView(
+              slivers: [
+                _buildAppBar(),
+                _buildFilterChips(),
+                if (_isLoading)
+                  const SliverFillRemaining(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (_filteredHistory.isEmpty)
+                  _buildEmptyState()
+                else
+                  _buildWatchHistoryGrid(crossAxisCount),
+              ],
+            );
+          },
+        ),
       ),
     );
+  }
+
+  int _getCrossAxisCount(double width) {
+    if (width >= 1000) return 4;
+    if (width >= 760) return 3;
+    return 2;
   }
 
   SliverAppBar _buildAppBar() {
@@ -118,7 +133,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   SliverToBoxAdapter _buildFilterChips() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -193,12 +208,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
   }
 
-  SliverPadding _buildWatchHistoryGrid() {
+  SliverPadding _buildWatchHistoryGrid(int crossAxisCount) {
     return SliverPadding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
           childAspectRatio: 0.7,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
@@ -498,22 +513,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
       // Launch the video with Android Intent
       // Add HTTP headers for Real-Debrid compatibility
-      final intent = AndroidIntent(
-        action: 'action_view',
-        data: url,
-        package: defaultVideoApp,
-        type: 'video/*',
-        arguments: {
-          'headers': {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Referer': item.mediaType == 'torrent'
-                ? 'https://real-debrid.com/'
-                : 'https://torrentio.strem.fun/',
-          },
-        },
+      await launchVideo(
+        url: url,
+        defaultVideoApp: defaultVideoApp,
+        referer: item.mediaType == 'torrent'
+            ? 'https://real-debrid.com/'
+            : 'https://torrentio.strem.fun/',
       );
-      await intent.launch();
     } catch (e) {
       // Fallback to url_launcher if AndroidIntent fails
       try {

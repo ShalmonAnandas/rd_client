@@ -1,13 +1,12 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart';
 import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/services/api_service.dart';
+import 'package:rd_client/services/sharing_intent_service.dart';
 import 'package:rd_client/services/storage_service.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
 class HomeController extends GetxController {
   RxList<Torrent> torrents = <Torrent>[].obs;
@@ -15,6 +14,7 @@ class HomeController extends GetxController {
 
   late final ApiService apiService;
   final _appLinks = AppLinks();
+  final _sharingIntentService = getSharingIntentService();
   StreamSubscription? _appLinksSubscription;
   StreamSubscription? _intentDataStreamSubscription;
 
@@ -60,28 +60,24 @@ class HomeController extends GetxController {
 
   void _initializeSharing() {
     // Handle initial shared media when app starts
-    ReceiveSharingIntent.instance.getInitialMedia().then((
-      List<SharedMediaFile> files,
-    ) {
+    _sharingIntentService.getInitialFiles().then((files) {
       if (files.isNotEmpty) {
         _handleSharedFiles(files);
       }
     });
 
     // Handle shared media while app is in foreground
-    _intentDataStreamSubscription = ReceiveSharingIntent.instance
-        .getMediaStream()
-        .listen(
-          (List<SharedMediaFile> files) {
-            _handleSharedFiles(files);
-          },
-          onError: (err) {
-            throw Exception('getMediaStream error: $err');
-          },
-        );
+    _intentDataStreamSubscription = _sharingIntentService.getFileStream().listen(
+      (files) {
+        _handleSharedFiles(files);
+      },
+      onError: (err) {
+        throw Exception('getMediaStream error: $err');
+      },
+    );
   }
 
-  void _handleSharedFiles(List<SharedMediaFile> files) {
+  void _handleSharedFiles(List<SharedFile> files) {
     for (var file in files) {
       if (file.path.endsWith(".torrent") && onTorrentFileReceived != null) {
         onTorrentFileReceived!(file.path);

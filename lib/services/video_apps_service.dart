@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class VideoAppsService {
@@ -11,6 +12,9 @@ class VideoAppsService {
   /// - appName: The display name of the app
   /// - isSystemApp: Whether the app is a system app
   static Future<List<Map<String, dynamic>>> getInstalledVideoApps() async {
+    if (kIsWeb) {
+      return [];
+    }
     try {
       final List<dynamic> result = await _channel.invokeMethod(
         'getInstalledVideoApps',
