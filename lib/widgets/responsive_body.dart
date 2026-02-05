@@ -4,11 +4,12 @@ class ResponsiveBody extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double maxWidth;
+  static const EdgeInsets _defaultPadding = EdgeInsets.zero;
 
   const ResponsiveBody({
     super.key,
     required this.child,
-    this.padding = EdgeInsets.zero,
+    this.padding = _defaultPadding,
     this.maxWidth = 900,
   });
 
