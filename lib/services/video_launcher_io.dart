@@ -10,7 +10,7 @@ Future<void> launchVideoImpl({
 }) async {
   if (Platform.isAndroid) {
     final intent = AndroidIntent(
-      action: 'action_view',
+      action: 'android.intent.action.VIEW',
       data: url,
       package: defaultVideoApp,
       type: 'video/*',

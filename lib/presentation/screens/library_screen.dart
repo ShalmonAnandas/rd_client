@@ -20,6 +20,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
   List<WatchProgress> _watchHistory = [];
   bool _isLoading = true;
   String _filterType = 'all'; // 'all', 'movies', 'tv', 'torrents'
+  static const double _largeScreenBreakpoint = 1000;
+  static const double _mediumScreenBreakpoint = 760;
 
   @override
   void initState() {
@@ -83,8 +85,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   int _getCrossAxisCount(double width) {
-    if (width >= 1000) return 4;
-    if (width >= 760) return 3;
+    if (width >= _largeScreenBreakpoint) return 4;
+    if (width >= _mediumScreenBreakpoint) return 3;
     return 2;
   }
 
