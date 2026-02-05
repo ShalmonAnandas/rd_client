@@ -11,6 +11,7 @@ class CacheService {
   static final CacheService instance = CacheService._();
 
   Database? _database;
+  static const _databaseName = 'cache.db';
   final _mediaDetailsStore = stringMapStoreFactory.store('media_details');
   final _seasonDetailsStore = stringMapStoreFactory.store('season_details');
   final _torrentioStreamsStore = stringMapStoreFactory.store(
@@ -26,11 +27,11 @@ class CacheService {
   Future<Database> _initDatabase() async {
     final factory = getDatabaseFactory();
     if (kIsWeb) {
-      return factory.openDatabase('cache.db');
+      return factory.openDatabase(_databaseName);
     }
     final appDocDir = await getApplicationDocumentsDirectory();
     await appDocDir.create(recursive: true);
-    final dbPath = join(appDocDir.path, 'cache.db');
+    final dbPath = join(appDocDir.path, _databaseName);
     return await factory.openDatabase(dbPath);
   }
 
