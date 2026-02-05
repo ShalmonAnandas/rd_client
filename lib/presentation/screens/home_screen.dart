@@ -10,6 +10,7 @@ import 'package:rd_client/presentation/screens/add_torrents_screen.dart';
 import 'package:rd_client/presentation/screens/library_screen.dart';
 import 'package:rd_client/presentation/screens/search_entry_point.dart';
 import 'package:rd_client/presentation/screens/settings_screen.dart';
+import 'package:rd_client/utils/responsive_constants.dart';
 import 'package:rd_client/widgets/add_magnet_dialog.dart';
 import 'package:rd_client/widgets/torrent_list_view.dart';
 
@@ -115,7 +116,9 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       () => Align(
         alignment: Alignment.center,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
+          constraints: const BoxConstraints(
+            maxWidth: ResponsiveConstants.bottomNavMaxWidth,
+          ),
           child: Container(
             margin: const EdgeInsets.all(24),
             height: 56,
