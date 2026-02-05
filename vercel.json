@@ -1,5 +1,5 @@
 {
-  "installCommand": "git clone https://github.com/flutter/flutter.git -b stable --depth 1 && ./flutter/bin/flutter --version",
+  "installCommand": "git clone --filter=blob:none --depth 1 -b stable https://github.com/flutter/flutter.git && ./flutter/bin/flutter --version",
   "buildCommand": "./flutter/bin/flutter pub get && ./flutter/bin/flutter build web --release",
   "outputDirectory": "build/web"
 }

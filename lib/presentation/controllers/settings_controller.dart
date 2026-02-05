@@ -70,12 +70,19 @@ class SettingsController extends GetxController {
       isTokenEditable.value = false;
       if (toRestart.value) {
         if (kIsWeb) {
-          Get.snackbar(
-            'Token saved',
-            'Please refresh the page to apply the updated token.',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.blueGrey.withOpacity(0.8),
-            colorText: Colors.white,
+          Get.dialog(
+            AlertDialog(
+              title: const Text('Refresh required'),
+              content: const Text(
+                'Please refresh the page to apply the updated token.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Get.back(),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
           );
         } else {
           Restart.restartApp(
