@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:rd_client/services/storage_service.dart';
 import 'package:rd_client/services/video_apps_service.dart';
 import 'package:rd_client/utils/app_constants.dart';
+import 'package:rd_client/utils/web_reload.dart';
 import 'package:restart_app/restart_app.dart';
 
 class SettingsController extends GetxController {
@@ -79,7 +80,14 @@ class SettingsController extends GetxController {
               actions: [
                 TextButton(
                   onPressed: () => Get.back(),
-                  child: const Text('OK'),
+                  child: const Text('Later'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Get.back();
+                    triggerWebReload();
+                  },
+                  child: const Text('Refresh now'),
                 ),
               ],
             ),
