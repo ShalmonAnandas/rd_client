@@ -11,12 +11,11 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(SettingsController());
-    final isWeb = kIsWeb;
 
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await controller.loadToken();
-      if (!isWeb) {
+      if (!kIsWeb) {
         await controller.loadVideoApps();
       }
     });
@@ -44,7 +43,7 @@ class SettingsScreen extends StatelessWidget {
              child: Column(
                children: [
                  _buildApiConfigurationSection(controller),
-                 if (!isWeb) ...[
+                 if (!kIsWeb) ...[
                    const SizedBox(height: 20),
                    _buildVideoAppSection(controller),
                  ],
