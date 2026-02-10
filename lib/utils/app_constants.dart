@@ -22,6 +22,7 @@ class AppConstants {
   static bool get hasTorboxToken =>
       torboxToken != null && torboxToken!.isNotEmpty;
   static bool get hasBothProviders => hasRdToken && hasTorboxToken;
+  static bool get hasAnyToken => hasRdToken || hasTorboxToken;
 
   static String? getTokenForProvider(String provider) {
     if (provider == torboxProvider) return torboxToken;
