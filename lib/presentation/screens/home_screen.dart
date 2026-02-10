@@ -287,7 +287,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   Widget _buildBody() {
     return Obx(() {
+      final hasToken = AppConstants.hasAnyToken;
       final hasBoth = AppConstants.hasBothProviders;
+      if (!hasToken) {
+        return Scaffold(
+          appBar: _buildAppBar(),
+          body: _buildTokenRequiredState(),
+        );
+      }
       if (!hasBoth) {
         return Scaffold(
           appBar: _buildAppBar(),
@@ -351,5 +358,55 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       );
     });
+  }
+
+  Widget _buildTokenRequiredState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              LucideIcons.key,
+              size: 72,
+              color: Colors.white.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Set up your API token',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.85),
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Add a Real Debrid or TorBox token to load your downloads.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.55),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 20),
+            OutlinedButton.icon(
+              onPressed: _navigateToSettings,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              icon: const Icon(LucideIcons.settings, size: 18),
+              label: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

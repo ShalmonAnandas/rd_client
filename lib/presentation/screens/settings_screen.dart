@@ -7,7 +7,14 @@ import 'package:rd_client/utils/app_constants.dart';
 import 'package:rd_client/widgets/responsive_body.dart';
 
 class SettingsScreen extends StatelessWidget {
-  const SettingsScreen({super.key});
+  final bool showSetupBanner;
+  final VoidCallback? onContinue;
+
+  const SettingsScreen({
+    super.key,
+    this.showSetupBanner = false,
+    this.onContinue,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -38,26 +45,115 @@ class SettingsScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-       body: SafeArea(
-         child: ResponsiveBody(
-           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-           child: SingleChildScrollView(
-             child: Column(
-               children: [
-                 _buildApiConfigurationSection(controller),
-                 if (!kIsWeb) ...[
-                   const SizedBox(height: 20),
-                   _buildVideoAppSection(controller),
-                 ],
-                 const SizedBox(height: 20),
-                 _buildTorrentioConfigSection(controller),
-                 const SizedBox(height: 20),
-                 _buildDebugSection(controller),
-               ],
-             ),
-           ),
-         ),
-       ),
+      body: SafeArea(
+        child: ResponsiveBody(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                if (showSetupBanner) ...[
+                  _buildSetupBanner(),
+                  const SizedBox(height: 20),
+                ],
+                _buildApiConfigurationSection(controller),
+                if (!kIsWeb) ...[
+                  const SizedBox(height: 20),
+                  _buildVideoAppSection(controller),
+                ],
+                const SizedBox(height: 20),
+                _buildTorrentioConfigSection(controller),
+                const SizedBox(height: 20),
+                _buildDebugSection(controller),
+              ],
+            ),
+          ),
+        ),
+      ),
+      bottomNavigationBar:
+          showSetupBanner ? _buildSetupFooter(context, controller) : null,
+    );
+  }
+
+  Widget _buildSetupBanner() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1F2937),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF3B82F6).withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(LucideIcons.key, color: Color(0xFF3B82F6), size: 22),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  'Welcome! Add your API tokens to get started.',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Set at least one Debrid provider token to unlock downloads.',
+                  style: TextStyle(
+                    color: Color(0xFF9CA3AF),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSetupFooter(
+    BuildContext context,
+    SettingsController controller,
+  ) {
+    return SafeArea(
+      minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Obx(() {
+        final hasToken = AppConstants.hasAnyToken;
+        return ElevatedButton(
+          onPressed: controller.isLoading.value
+              ? null
+              : () {
+                  if (!hasToken) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please save a token to continue.'),
+                      ),
+                    );
+                    return;
+                  }
+                  onContinue?.call();
+                },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF3B82F6),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: Text(
+            hasToken ? 'Continue to Downloads' : 'Save a token to continue',
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        );
+      }),
     );
   }
 
