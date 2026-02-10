@@ -1,6 +1,5 @@
 import 'package:rd_client/services/alice_dio_adapter_stub.dart'
-    if (dart.library.io) 'package:alice_dio/alice_dio_adapter.dart'
-    if (dart.library.html) 'package:rd_client/services/alice_dio_adapter_stub.dart';
+    if (dart.library.io) 'package:alice_dio/alice_dio_adapter.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';

@@ -6,8 +6,7 @@ import 'package:rd_client/services/video_apps_service.dart';
 import 'package:rd_client/utils/app_constants.dart';
 import 'package:rd_client/utils/web_reload.dart';
 import 'package:rd_client/utils/restart_app_stub.dart'
-    if (dart.library.io) 'package:restart_app/restart_app.dart'
-    if (dart.library.html) 'package:rd_client/utils/restart_app_stub.dart';
+    if (dart.library.io) 'package:restart_app/restart_app.dart';
 
 class SettingsController extends GetxController {
   final TextEditingController tokenController = TextEditingController();
