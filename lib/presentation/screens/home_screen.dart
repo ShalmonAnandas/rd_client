@@ -71,10 +71,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   void _navigateToSettings() {
-    Navigator.push(
-      context,
-      CupertinoPageRoute(builder: (context) => const SettingsScreen()),
+    pageController.animateToPage(
+      3,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
     );
+    currentIndex.value = 3;
   }
 
   void _showAddMagnetDialog() {
@@ -114,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   Widget _buildGlassBottomNav() {
     return Obx(
       () => Align(
-        alignment: Alignment.center,
+        alignment: Alignment.bottomCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(
             maxWidth: ResponsiveConstants.bottomNavMaxWidth,
