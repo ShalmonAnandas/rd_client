@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/presentation/screens/home_screen.dart';
 import 'package:rd_client/services/api_service.dart';
+import 'package:rd_client/utils/app_constants.dart';
 
 class AddTorrentsController extends GetxController {
   final Rx<Torrent?> addedTorrent = Rx<Torrent?>(null);
@@ -20,8 +21,17 @@ class AddTorrentsController extends GetxController {
     this.addedTorrent.value = addedTorrent;
 
     fetchAddedTorrent().then((_) {
-      selectedFileIds.clear();
-      selectAll.value = false;
+      if (AppConstants.debridProvider == AppConstants.torboxProvider) {
+        selectedFileIds.clear();
+        selectedFileIds.addAll({
+          for (var file in addedTorrent.value?.files ?? [])
+            if (file.id != null) file.id!,
+        });
+        selectAll.value = selectedFileIds.isNotEmpty;
+      } else {
+        selectedFileIds.clear();
+        selectAll.value = false;
+      }
       isLoading.value = false;
     });
   }
@@ -83,10 +93,12 @@ class AddTorrentsController extends GetxController {
   }
 
   Future<void> addSelectedFiles(BuildContext context) async {
-    await ApiService.instance.addFilesToTorrent(
-      addedTorrent.value!.id.toString(),
-      selectedFileIds.join(','),
-    );
+    if (AppConstants.debridProvider != AppConstants.torboxProvider) {
+      await ApiService.instance.addFilesToTorrent(
+        addedTorrent.value!.id.toString(),
+        selectedFileIds.join(','),
+      );
+    }
 
     Navigator.pushAndRemoveUntil(
       context,

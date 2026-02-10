@@ -15,6 +15,29 @@ class StorageService {
     return await storage.read(key: 'rd_auth_token');
   }
 
+  Future<void> storeTorboxToken(String token) async {
+    await storage.write(key: 'torbox_auth_token', value: token);
+  }
+
+  Future<String?> getTorboxToken() async {
+    return await storage.read(key: 'torbox_auth_token');
+  }
+
+  Future<void> storeDebridProvider(String provider) async {
+    await storage.write(key: 'debrid_provider', value: provider);
+  }
+
+  Future<String?> getDebridProvider() async {
+    return await storage.read(key: 'debrid_provider');
+  }
+
+  Future<String?> getTokenForProvider(String provider) async {
+    if (provider == 'torbox') {
+      return getTorboxToken();
+    }
+    return getToken();
+  }
+
   Future<void> storeDefaultVideoApp(String packageName) async {
     await storage.write(key: 'default_video_app', value: packageName);
   }

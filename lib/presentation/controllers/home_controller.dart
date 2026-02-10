@@ -8,6 +8,7 @@ import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/services/api_service.dart';
 import 'package:rd_client/services/sharing_intent_service.dart';
 import 'package:rd_client/services/storage_service.dart';
+import 'package:rd_client/utils/app_constants.dart';
 import 'package:flutter/foundation.dart';
 
 class HomeController extends GetxController {
@@ -48,7 +49,10 @@ class HomeController extends GetxController {
   }
 
   Future<bool> checkApiToken() async {
-    final token = await StorageService.instance.getToken();
+    final provider =
+        await StorageService.instance.getDebridProvider() ??
+        AppConstants.realDebridProvider;
+    final token = await StorageService.instance.getTokenForProvider(provider);
     return token != null;
   }
 

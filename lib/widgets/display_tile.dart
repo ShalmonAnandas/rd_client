@@ -10,6 +10,7 @@ import 'package:rd_client/presentation/controllers/home_controller.dart';
 import 'package:rd_client/presentation/screens/add_torrents_screen.dart';
 import 'package:rd_client/presentation/screens/torrent_page.dart';
 import 'package:rd_client/services/api_service.dart';
+import 'package:rd_client/utils/app_constants.dart';
 import 'package:rd_client/utils/utility_functions.dart';
 
 class DisplayTile extends StatefulWidget {
@@ -316,7 +317,7 @@ class _DisplayTileState extends State<DisplayTile> {
       case 'downloading':
         return 'DOWNLOADING';
       case 'downloaded':
-        return 'RD+ Available';
+        return '${AppConstants.debridStatusLabel} Available';
       default:
         return 'UNKNOWN';
     }
@@ -352,9 +353,9 @@ class _DisplayTileState extends State<DisplayTile> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Caching to RD+',
-                  style: TextStyle(
+                Text(
+                  'Caching to ${AppConstants.debridStatusLabel}',
+                  style: const TextStyle(
                     color: Color(0xFFF3F4F6),
                     fontWeight: FontWeight.w600,
                     fontSize: 14,

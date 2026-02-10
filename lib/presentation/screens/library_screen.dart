@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:rd_client/services/storage_service.dart';
 import 'package:rd_client/services/video_launcher.dart';
 import 'package:rd_client/services/watch_progress_service.dart';
+import 'package:rd_client/utils/app_constants.dart';
 import 'package:rd_client/utils/responsive_constants.dart';
 import 'package:rd_client/widgets/responsive_body.dart';
 import 'package:rd_client/widgets/watch_progress_dialog.dart';
@@ -513,12 +514,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
       }
 
       // Launch the video with Android Intent
-      // Add HTTP headers for Real-Debrid compatibility
+      // Add HTTP headers for Debrid compatibility
       await launchVideo(
         url: url,
         defaultVideoApp: defaultVideoApp,
         referer: item.mediaType == 'torrent'
-            ? 'https://real-debrid.com/'
+            ? AppConstants.debridReferer
             : 'https://torrentio.strem.fun/',
       );
     } catch (e) {
