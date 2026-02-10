@@ -70,7 +70,7 @@ class SettingsScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar:
-          showSetupBanner ? _buildSetupFooter(context, controller) : null,
+          showSetupBanner ? _buildSetupFooter(controller) : null,
     );
   }
 
@@ -118,26 +118,15 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSetupFooter(
-    BuildContext context,
-    SettingsController controller,
-  ) {
+  Widget _buildSetupFooter(SettingsController controller) {
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: Obx(() {
         final hasToken = AppConstants.hasAnyToken;
         return ElevatedButton(
-          onPressed: controller.isLoading.value
+          onPressed: controller.isLoading.value || !hasToken
               ? null
               : () {
-                  if (!hasToken) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Please save a token to continue.'),
-                      ),
-                    );
-                    return;
-                  }
                   onContinue?.call();
                 },
           style: ElevatedButton.styleFrom(
