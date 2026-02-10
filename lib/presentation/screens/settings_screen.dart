@@ -284,7 +284,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${tokenController.text.substring(0, tokenController.text.length >= 8 ? 8 : tokenController.text.length)}••••••••',
+                    '${tokenController.text.substring(0, tokenController.text.length.clamp(0, 8))}••••••••',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF9CA3AF),

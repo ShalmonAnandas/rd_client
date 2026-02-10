@@ -260,7 +260,7 @@ class ApiService {
         final response = await _dio.get(
           '${AppConstants.torboxBaseUrl}/torrents/requestdl',
           queryParameters: {
-            'token': AppConstants.torboxToken,
+            'token': AppConstants.getTokenForProvider(provider),
             'torrent_id': linkData.torrentId,
             'file_id': linkData.fileId,
           },
