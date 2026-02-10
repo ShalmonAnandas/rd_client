@@ -112,72 +112,137 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildApiConfigurationSection(SettingsController controller) {
     return _buildSectionContainer(
-      title: 'Debrid Provider',
+      title: 'Debrid Providers',
       icon: LucideIcons.key,
       iconColor: const Color(0xFF3B82F6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Select Provider',
-            style: TextStyle(
-              fontSize: 13,
-              color: Color(0xFF9CA3AF),
-              fontWeight: FontWeight.w500,
-            ),
+          // Real Debrid Token
+          _buildProviderTokenSection(
+            controller: controller,
+            providerName: 'Real Debrid',
+            providerKey: AppConstants.realDebridProvider,
+            tokenController: controller.rdTokenController,
+            isEditable: controller.isRdTokenEditable,
+            onEnable: controller.enableRdTokenEditing,
+            onDisable: controller.disableRdTokenEditing,
+            onSave: controller.saveRdToken,
+            iconColor: const Color(0xFF3B82F6),
           ),
-          const SizedBox(height: 8),
-          Obx(() => _buildProviderDropdown(controller)),
           const SizedBox(height: 16),
-          Obx(() => _buildTokenField(controller)),
-          const SizedBox(height: 12),
-          Obx(() => _buildTokenActions(controller)),
+          const Divider(color: Color(0xFF2D3748), height: 1, thickness: 1),
+          const SizedBox(height: 16),
+          // TorBox Token
+          _buildProviderTokenSection(
+            controller: controller,
+            providerName: 'TorBox',
+            providerKey: AppConstants.torboxProvider,
+            tokenController: controller.torboxTokenController,
+            isEditable: controller.isTorboxTokenEditable,
+            onEnable: controller.enableTorboxTokenEditing,
+            onDisable: controller.disableTorboxTokenEditing,
+            onSave: controller.saveTorboxToken,
+            iconColor: const Color(0xFF10B981),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildProviderDropdown(SettingsController controller) {
-    return DropdownButtonFormField<String>(
-      value: controller.selectedDebridProvider.value,
-      dropdownColor: const Color(0xFF1F2937),
-      iconEnabledColor: const Color(0xFF9CA3AF),
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: const Color(0xFF0F1419),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2D3748), width: 1),
+  Widget _buildProviderTokenSection({
+    required SettingsController controller,
+    required String providerName,
+    required String providerKey,
+    required TextEditingController tokenController,
+    required RxBool isEditable,
+    required VoidCallback onEnable,
+    required VoidCallback onDisable,
+    required Future<void> Function() onSave,
+    required Color iconColor,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '$providerName API Token',
+          style: TextStyle(
+            fontSize: 13,
+            color: iconColor,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2D3748), width: 1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
-        ),
-      ),
-      items: AppConstants.debridProviderLabels.entries
-          .map(
-            (entry) => DropdownMenuItem(
-              value: entry.key,
-              child: Text(entry.value),
-            ),
-          )
-          .toList(),
-      onChanged: controller.isLoading.value
-          ? null
-          : (value) => controller.setDebridProvider(value!),
-      style: const TextStyle(color: Color(0xFFF9FAFB), fontSize: 14),
+        const SizedBox(height: 8),
+        Obx(() => _buildProviderTokenField(
+              controller: controller,
+              tokenController: tokenController,
+              isEditable: isEditable.value,
+              providerName: providerName,
+              onEnable: onEnable,
+            )),
+        const SizedBox(height: 8),
+        Obx(() {
+          if (!isEditable.value) return const SizedBox.shrink();
+          return Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onDisable,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF9CA3AF),
+                    side: const BorderSide(color: Color(0xFF2D3748)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: controller.isLoading.value ? null : onSave,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: iconColor,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: controller.isLoading.value
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text('Save Token'),
+                ),
+              ),
+            ],
+          );
+        }),
+      ],
     );
   }
 
-  Widget _buildTokenField(SettingsController controller) {
+  Widget _buildProviderTokenField({
+    required SettingsController controller,
+    required TextEditingController tokenController,
+    required bool isEditable,
+    required String providerName,
+    required VoidCallback onEnable,
+  }) {
     if (controller.isLoading.value) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 20),
+          padding: EdgeInsets.symmetric(vertical: 12),
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
             strokeWidth: 2,
@@ -186,8 +251,7 @@ class SettingsScreen extends StatelessWidget {
       );
     }
 
-    if (!controller.isTokenEditable.value &&
-        controller.tokenController.text.isNotEmpty) {
+    if (!isEditable && tokenController.text.isNotEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -210,9 +274,9 @@ class SettingsScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Token Configured',
-                    style: TextStyle(
+                  Text(
+                    '$providerName Token Configured',
+                    style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFFF3F4F6),
@@ -220,7 +284,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '${controller.tokenController.text.substring(0, 8)}••••••••',
+                    '${tokenController.text.substring(0, tokenController.text.length >= 8 ? 8 : tokenController.text.length)}••••••••',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Color(0xFF9CA3AF),
@@ -231,7 +295,7 @@ class SettingsScreen extends StatelessWidget {
               ),
             ),
             IconButton(
-              onPressed: controller.enableTokenEditing,
+              onPressed: onEnable,
               icon: const Icon(
                 LucideIcons.pencil,
                 color: Color(0xFF9CA3AF),
@@ -251,10 +315,10 @@ class SettingsScreen extends StatelessWidget {
     }
 
     return TextField(
-      controller: controller.tokenController,
+      controller: tokenController,
       style: const TextStyle(color: Color(0xFFF9FAFB), fontSize: 14),
       decoration: InputDecoration(
-        hintText: 'Enter your ${controller.debridDisplayName} API token',
+        hintText: 'Enter your $providerName API token',
         hintStyle: const TextStyle(color: Color(0xFF6B7280), fontSize: 14),
         filled: true,
         fillColor: const Color(0xFF0F1419),
@@ -275,57 +339,6 @@ class SettingsScreen extends StatelessWidget {
           vertical: 12,
         ),
       ),
-      obscureText: !controller.isTokenEditable.value,
-    );
-  }
-
-  Widget _buildTokenActions(SettingsController controller) {
-    if (!controller.isTokenEditable.value) {
-      return const SizedBox.shrink();
-    }
-
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: controller.disableTokenEditing,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF9CA3AF),
-              side: const BorderSide(color: Color(0xFF2D3748)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-            child: const Text('Cancel'),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: ElevatedButton(
-            onPressed: controller.isLoading.value ? null : controller.saveToken,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3B82F6),
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
-            child: controller.isLoading.value
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Text('Save Token'),
-          ),
-        ),
-      ],
     );
   }
 
