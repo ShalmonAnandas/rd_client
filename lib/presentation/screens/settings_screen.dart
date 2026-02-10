@@ -119,7 +119,7 @@ class SettingsScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Debrid Provider',
+            'Select Provider',
             style: TextStyle(
               fontSize: 13,
               color: Color(0xFF9CA3AF),
@@ -158,23 +158,17 @@ class SettingsScreen extends StatelessWidget {
           borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
         ),
       ),
-      items: const [
-        DropdownMenuItem(
-          value: AppConstants.realDebridProvider,
-          child: Text('Real Debrid'),
-        ),
-        DropdownMenuItem(
-          value: AppConstants.torboxProvider,
-          child: Text('TorBox'),
-        ),
-      ],
+      items: AppConstants.debridProviderLabels.entries
+          .map(
+            (entry) => DropdownMenuItem(
+              value: entry.key,
+              child: Text(entry.value),
+            ),
+          )
+          .toList(),
       onChanged: controller.isLoading.value
           ? null
-          : (value) {
-              if (value != null) {
-                controller.setDebridProvider(value);
-              }
-            },
+          : (value) => controller.setDebridProvider(value!),
       style: const TextStyle(color: Color(0xFFF9FAFB), fontSize: 14),
     );
   }

@@ -42,9 +42,8 @@ class SettingsController extends GetxController {
   }
 
   String get debridDisplayName =>
-      selectedDebridProvider.value == AppConstants.torboxProvider
-          ? 'TorBox'
-          : 'Real Debrid';
+      AppConstants.debridProviderLabels[selectedDebridProvider.value] ??
+      'Real Debrid';
 
   Future<void> loadDebridProvider() async {
     final provider =

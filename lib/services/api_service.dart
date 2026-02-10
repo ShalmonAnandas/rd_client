@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:rd_client/services/alice_dio_adapter_stub.dart'
     if (dart.library.io) 'package:alice_dio/alice_dio_adapter.dart';
 import 'package:dio/dio.dart';
@@ -54,7 +56,7 @@ class ApiService {
     };
   }
 
-  int? _toInt(dynamic value) {
+  int? _convertToInt(dynamic value) {
     if (value is int) {
       return value;
     }
@@ -68,57 +70,85 @@ class ApiService {
   }
 
   String _mapTorboxStatus(String? status) {
-    switch (status) {
-      case 'cached':
-      case 'completed':
-        return 'downloaded';
-      case 'uploading':
-        return 'uploading';
-      case 'downloading':
-      case 'metaDL':
-      case 'checkingResumeData':
-      case 'stalled (no seeds)':
-        return 'downloading';
-      default:
-        return status ?? 'unknown';
+    final normalized = status?.toLowerCase();
+    if (normalized == 'cached' || normalized == 'completed') {
+      return 'downloaded';
     }
+    if (normalized == 'uploading') {
+      return 'uploading';
+    }
+    if (normalized == 'downloading' ||
+        normalized == 'metadl' ||
+        normalized == 'checkingresumedata' ||
+        (normalized?.startsWith('stalled') ?? false)) {
+      return 'downloading';
+    }
+    return status ?? 'unknown';
   }
 
+  /// Builds an internal TorBox link reference in the format:
+  /// torbox|{torrentId}|{fileId}|{encodedName}|{size}
+  /// where encodedName is a base64url-encoded filename and size may be empty.
   String _buildTorboxLink(String? torrentId, FileElement file) {
-    final encodedName = Uri.encodeComponent(file.path ?? '');
+    final encodedName =
+        base64UrlEncode(utf8.encode(file.path ?? ''));
     final size = file.bytes?.toString() ?? '';
-    return 'torbox:${torrentId ?? ''}:${file.id ?? ''}:$encodedName:$size';
+    return 'torbox|${torrentId ?? ''}|${file.id ?? ''}|$encodedName|$size';
   }
 
   _TorboxLinkData? _parseTorboxLink(String link) {
-    if (!link.startsWith('torbox:')) {
+    final delimiter =
+        link.startsWith('torbox|')
+            ? '|'
+            : link.startsWith('torbox:')
+            ? ':'
+            : null;
+    if (delimiter == null) {
       return null;
     }
-    final parts = link.split(':');
+    final parts = link.split(delimiter);
     if (parts.length < 4) {
       return null;
     }
     final torrentId = parts[1];
     final fileId = parts[2];
-    final size = parts.length > 4 ? parts.last : '';
+    final hasSize = parts.length > 4;
+    final size = hasSize ? parts.last : '';
     final nameStartIndex = 3;
-    final nameEndIndex = parts.length > 4 ? parts.length - 1 : parts.length;
-    final encodedName = parts.sublist(nameStartIndex, nameEndIndex).join(':');
+    final nameEndIndex = hasSize ? parts.length - 1 : parts.length;
+    final encodedName =
+        parts.sublist(nameStartIndex, nameEndIndex).join(delimiter);
+    final filename = _decodeTorboxFilename(encodedName);
     return _TorboxLinkData(
       torrentId: torrentId,
       fileId: fileId,
-      filename: Uri.decodeComponent(encodedName),
-      size: _toInt(size) ?? 0,
+      filename: filename,
+      size: _convertToInt(size) ?? 0,
     );
   }
 
+  String _decodeTorboxFilename(String encodedName) {
+    if (encodedName.isEmpty) {
+      return '';
+    }
+    try {
+      return utf8.decode(base64Url.decode(encodedName));
+    } catch (e) {
+      debugPrint('Failed to decode TorBox filename: $e');
+      return Uri.decodeComponent(encodedName);
+    }
+  }
+
+  /// Maps TorBox torrent payload fields into the app's Torrent model.
+  /// Uses TorBox's name/size/status/progress fields and converts files
+  /// into FileElement records with TorBox download references.
   Torrent _mapTorboxTorrent(Map<String, dynamic> item) {
     final files = (item['files'] as List?)
         ?.map(
           (file) => FileElement(
-            id: _toInt(file['id']),
+            id: _convertToInt(file['id']),
             path: file['name']?.toString(),
-            bytes: _toInt(file['size']),
+            bytes: _convertToInt(file['size']),
             selected: 1,
           ),
         )
@@ -132,11 +162,11 @@ class ApiService {
     return Torrent(
       id: torrentId,
       filename: item['name']?.toString(),
-      bytes: _toInt(item['size']),
+      bytes: _convertToInt(item['size']),
       status: _mapTorboxStatus(item['download_state']?.toString()),
-      progress: _toInt(item['progress']),
-      speed: _toInt(item['download_speed']),
-      seeders: _toInt(item['seeds']),
+      progress: _convertToInt(item['progress']),
+      speed: _convertToInt(item['download_speed']),
+      seeders: _convertToInt(item['seeds']),
       added: item['created_at']?.toString(),
       hash: item['hash']?.toString(),
       files: files,
@@ -221,6 +251,7 @@ class ApiService {
         final response = await _dio.get(
           '${AppConstants.torboxBaseUrl}/torrents/requestdl',
           queryParameters: {
+            // TorBox requestdl requires the API token as a query parameter.
             'token': AppConstants.apiToken,
             'torrent_id': linkData.torrentId,
             'file_id': linkData.fileId,
@@ -318,6 +349,7 @@ class ApiService {
         await _dio.post(
           '${AppConstants.torboxBaseUrl}/torrents/controltorrent',
           data: {'torrent_id': id, 'operation': 'delete'},
+          options: Options(contentType: Headers.jsonContentType),
         );
         return;
       }
@@ -348,7 +380,6 @@ class ApiService {
 
   Future<List<MediaModel>> searchMedia(String query) async {
     try {
-      _applyAuthHeader();
       final result = await _dio.get(
         '${AppConstants.tmdbBaseUrl}/search/multi?query=$query',
       );
@@ -372,7 +403,6 @@ class ApiService {
     required int mediaId,
   }) async {
     try {
-      _applyAuthHeader();
       // Check cache first
       final cacheKey = 'media_${mediaType}_$mediaId';
       final cachedData = await CacheService.instance.getMediaDetails(
@@ -403,7 +433,6 @@ class ApiService {
     required int seasonNumber,
   }) async {
     try {
-      _applyAuthHeader();
       // Check cache first
       final cacheKey = 'season_${tvShowId}_$seasonNumber';
       final cachedData = await CacheService.instance.getSeasonDetails(
@@ -464,11 +493,11 @@ class ApiService {
       }
 
       // Build the configuration with RD API key and user settings
-      final token =
-          await StorageService.instance.getTokenForProvider(provider) ??
-          AppConstants.apiToken;
+      final token = await StorageService.instance.getTokenForProvider(provider);
       final debridKey =
-          provider == AppConstants.torboxProvider ? 'torbox' : 'realdebrid';
+          provider == AppConstants.torboxProvider
+              ? AppConstants.torboxProvider
+              : AppConstants.realDebridProvider;
       final configParts = ['${debridKey}=${token ?? ''}'];
 
       // Add providers
