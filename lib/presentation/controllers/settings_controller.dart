@@ -195,8 +195,8 @@ class SettingsController extends GetxController {
   }
 
   void _checkRestartNeeded() {
-    final noTokens = !AppConstants.hasRdToken && !AppConstants.hasTorboxToken;
-    if (noTokens && toRestart.value) {
+    final hasAnyToken = AppConstants.hasRdToken || AppConstants.hasTorboxToken;
+    if (hasAnyToken && toRestart.value) {
       if (kIsWeb) {
         Get.dialog(
           AlertDialog(
