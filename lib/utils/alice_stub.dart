@@ -13,7 +13,9 @@ class AliceConfiguration {
 class Alice {
   Alice({required AliceConfiguration configuration});
 
-  GlobalKey<NavigatorState> getNavigatorKey() => GlobalKey<NavigatorState>();
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
+  GlobalKey<NavigatorState> getNavigatorKey() => _navigatorKey;
 
   void addAdapter(Object adapter) {}
 
