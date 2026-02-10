@@ -8,6 +8,7 @@ import 'package:rd_client/models/torrent.dart';
 import 'package:rd_client/services/api_service.dart';
 import 'package:rd_client/services/sharing_intent_service.dart';
 import 'package:rd_client/services/storage_service.dart';
+import 'package:flutter/foundation.dart';
 
 class HomeController extends GetxController {
   RxList<Torrent> torrents = <Torrent>[].obs;
