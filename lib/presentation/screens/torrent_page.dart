@@ -10,6 +10,7 @@ import 'package:rd_client/services/api_service.dart';
 import 'package:rd_client/services/storage_service.dart';
 import 'package:rd_client/services/video_launcher.dart';
 import 'package:rd_client/services/watch_progress_service.dart';
+import 'package:rd_client/utils/app_constants.dart';
 import 'package:rd_client/utils/utility_functions.dart';
 import 'package:rd_client/widgets/display_tile_shimmer.dart';
 import 'package:rd_client/widgets/watch_progress_dialog.dart';
@@ -125,7 +126,7 @@ class _TorrentPageState extends State<TorrentPage> with WidgetsBindingObserver {
       case 'downloading':
         return 'DOWNLOADING';
       case 'downloaded':
-        return 'RD+ Available';
+        return '${AppConstants.debridStatusLabel} Available';
       default:
         return 'UNKNOWN';
     }
@@ -205,11 +206,11 @@ class _TorrentPageState extends State<TorrentPage> with WidgetsBindingObserver {
         url = '$url#t=$timeInSeconds';
       }
 
-       await launchVideo(
-         url: url,
-         defaultVideoApp: defaultVideoApp,
-         referer: 'https://real-debrid.com/',
-       );
+        await launchVideo(
+          url: url,
+          defaultVideoApp: defaultVideoApp,
+          referer: AppConstants.debridReferer,
+        );
     } else {
       await launchUrl(
         Uri.parse(unrestrictedLink.download!),
@@ -475,9 +476,9 @@ class _TorrentPageState extends State<TorrentPage> with WidgetsBindingObserver {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Caching to RD+',
-                    style: TextStyle(
+                  Text(
+                    'Caching to ${AppConstants.debridStatusLabel}',
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -485,7 +486,7 @@ class _TorrentPageState extends State<TorrentPage> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Your torrent is being processed and cached on RD+ servers for instant access.',
+                    'Your torrent is being processed and cached on ${AppConstants.debridStatusLabel} servers for instant access.',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
                       fontSize: 14,
@@ -568,7 +569,7 @@ class _TorrentPageState extends State<TorrentPage> with WidgetsBindingObserver {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Downloading to RD+',
+                    'Downloading to ${AppConstants.debridStatusLabel}',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,

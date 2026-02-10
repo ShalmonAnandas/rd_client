@@ -13,6 +13,7 @@ import 'package:rd_client/services/cache_service.dart';
 import 'package:rd_client/services/file_reader.dart';
 import 'package:rd_client/services/storage_service.dart';
 import 'package:rd_client/utils/app_constants.dart';
+import 'package:path/path.dart' as path;
 
 class ApiService {
   ApiService._() {
@@ -44,8 +45,123 @@ class ApiService {
 
   final Map<String, UnrestrictedLinkModel> unrestrictedLinkCache = {};
 
+  bool get _isTorbox =>
+      AppConstants.debridProvider == AppConstants.torboxProvider;
+
+  void _applyAuthHeader() {
+    _dio.options.headers = {
+      'Authorization': 'Bearer ${AppConstants.apiToken ?? ''}',
+    };
+  }
+
+  int? _toInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+    if (value is num) {
+      return value.toInt();
+    }
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
+  }
+
+  String _mapTorboxStatus(String? status) {
+    switch (status) {
+      case 'cached':
+      case 'completed':
+        return 'downloaded';
+      case 'uploading':
+        return 'uploading';
+      case 'downloading':
+      case 'metaDL':
+      case 'checkingResumeData':
+      case 'stalled (no seeds)':
+        return 'downloading';
+      default:
+        return status ?? 'unknown';
+    }
+  }
+
+  String _buildTorboxLink(String? torrentId, FileElement file) {
+    final encodedName = Uri.encodeComponent(file.path ?? '');
+    final size = file.bytes?.toString() ?? '';
+    return 'torbox:${torrentId ?? ''}:${file.id ?? ''}:$encodedName:$size';
+  }
+
+  _TorboxLinkData? _parseTorboxLink(String link) {
+    if (!link.startsWith('torbox:')) {
+      return null;
+    }
+    final parts = link.split(':');
+    if (parts.length < 4) {
+      return null;
+    }
+    final torrentId = parts[1];
+    final fileId = parts[2];
+    final size = parts.length > 4 ? parts.last : '';
+    final nameStartIndex = 3;
+    final nameEndIndex = parts.length > 4 ? parts.length - 1 : parts.length;
+    final encodedName = parts.sublist(nameStartIndex, nameEndIndex).join(':');
+    return _TorboxLinkData(
+      torrentId: torrentId,
+      fileId: fileId,
+      filename: Uri.decodeComponent(encodedName),
+      size: _toInt(size) ?? 0,
+    );
+  }
+
+  Torrent _mapTorboxTorrent(Map<String, dynamic> item) {
+    final files = (item['files'] as List?)
+        ?.map(
+          (file) => FileElement(
+            id: _toInt(file['id']),
+            path: file['name']?.toString(),
+            bytes: _toInt(file['size']),
+            selected: 1,
+          ),
+        )
+        .toList();
+    final torrentId = item['id']?.toString();
+    final links =
+        files
+            ?.where((file) => file.id != null)
+            .map((file) => _buildTorboxLink(torrentId, file))
+            .toList();
+    return Torrent(
+      id: torrentId,
+      filename: item['name']?.toString(),
+      bytes: _toInt(item['size']),
+      status: _mapTorboxStatus(item['download_state']?.toString()),
+      progress: _toInt(item['progress']),
+      speed: _toInt(item['download_speed']),
+      seeders: _toInt(item['seeds']),
+      added: item['created_at']?.toString(),
+      hash: item['hash']?.toString(),
+      files: files,
+      links: links,
+    );
+  }
+
   Future<List<Torrent>> getTorrentList() async {
     try {
+      _applyAuthHeader();
+      if (_isTorbox) {
+        final response =
+            await _dio.get('${AppConstants.torboxBaseUrl}/torrents/mylist');
+        final data = response.data is Map<String, dynamic>
+            ? response.data['data']
+            : null;
+        if (data is List) {
+          return data
+              .whereType<Map<String, dynamic>>()
+              .map(_mapTorboxTorrent)
+              .toList();
+        }
+        return [];
+      }
+
       final response = await _dio.get('${AppConstants.rdBaseUrl}/torrents');
 
       List<Torrent> torrents = [];
@@ -62,6 +178,24 @@ class ApiService {
 
   Future<Torrent> getSingleTorrent(String id) async {
     try {
+      _applyAuthHeader();
+      if (_isTorbox) {
+        final response = await _dio.get(
+          '${AppConstants.torboxBaseUrl}/torrents/mylist',
+          queryParameters: {'id': id},
+        );
+        final data = response.data is Map<String, dynamic>
+            ? response.data['data']
+            : null;
+        if (data is List && data.isNotEmpty) {
+          return _mapTorboxTorrent(data.first as Map<String, dynamic>);
+        }
+        if (data is Map<String, dynamic>) {
+          return _mapTorboxTorrent(data);
+        }
+        return Torrent();
+      }
+
       final response = await _dio.get(
         '${AppConstants.rdBaseUrl}/torrents/info/$id',
       );
@@ -76,6 +210,37 @@ class ApiService {
     try {
       if (unrestrictedLinkCache.containsKey(link)) {
         return unrestrictedLinkCache[link]!;
+      }
+
+      _applyAuthHeader();
+      if (_isTorbox) {
+        final linkData = _parseTorboxLink(link);
+        if (linkData == null) {
+          throw Exception('Invalid TorBox download reference');
+        }
+        final response = await _dio.get(
+          '${AppConstants.torboxBaseUrl}/torrents/requestdl',
+          queryParameters: {
+            'token': AppConstants.apiToken,
+            'torrent_id': linkData.torrentId,
+            'file_id': linkData.fileId,
+          },
+        );
+        final downloadUrl =
+            response.data is Map<String, dynamic> ? response.data['data'] : null;
+        if (downloadUrl == null || downloadUrl.toString().isEmpty) {
+          throw Exception('Failed to request TorBox download link');
+        }
+        final unrestrictedLink = UnrestrictedLinkModel(
+          id: linkData.fileId,
+          filename: linkData.filename,
+          filesize: linkData.size,
+          download: downloadUrl.toString(),
+          streamable: 1,
+          host: 'TorBox',
+        );
+        unrestrictedLinkCache[link] = unrestrictedLink;
+        return unrestrictedLink;
       }
 
       final response = await _dio.post(
@@ -93,6 +258,15 @@ class ApiService {
 
   Future<String?> addMagnet(String magnetUrl) async {
     try {
+      _applyAuthHeader();
+      if (_isTorbox) {
+        final response = await _dio.post(
+          '${AppConstants.torboxBaseUrl}/torrents/createtorrent',
+          data: FormData.fromMap({'magnet': magnetUrl}),
+        );
+        return response.data['data']?['torrent_id']?.toString();
+      }
+
       final response = await _dio.post(
         '${AppConstants.rdBaseUrl}/torrents/addMagnet',
         data: FormData.fromMap({'magnet': magnetUrl}),
@@ -109,8 +283,21 @@ class ApiService {
       if (kIsWeb) {
         throw UnsupportedError('Torrent file uploads are not supported on web');
       }
+      _applyAuthHeader();
       // Read the file as raw bytes
       final file = await getFileReader().readBytes(filePath);
+      if (_isTorbox) {
+        final response = await _dio.post(
+          '${AppConstants.torboxBaseUrl}/torrents/createtorrent',
+          data: FormData.fromMap({
+            'file': MultipartFile.fromBytes(
+              file,
+              filename: path.basename(filePath),
+            ),
+          }),
+        );
+        return response.data['data']?['torrent_id']?.toString();
+      }
 
       final response = await _dio.put(
         '${AppConstants.rdBaseUrl}/torrents/addTorrent',
@@ -126,6 +313,15 @@ class ApiService {
 
   Future<void> deleteTorrent(String id) async {
     try {
+      _applyAuthHeader();
+      if (_isTorbox) {
+        await _dio.post(
+          '${AppConstants.torboxBaseUrl}/torrents/controltorrent',
+          data: {'torrent_id': id, 'operation': 'delete'},
+        );
+        return;
+      }
+
       await _dio.delete(
         '${AppConstants.rdBaseUrl}/torrents/delete/$id',
         data: FormData.fromMap({}),
@@ -137,6 +333,10 @@ class ApiService {
 
   Future<void> addFilesToTorrent(String torrentId, String fileIds) async {
     try {
+      _applyAuthHeader();
+      if (_isTorbox) {
+        return;
+      }
       await _dio.post(
         '${AppConstants.rdBaseUrl}/torrents/selectFiles/$torrentId',
         data: FormData.fromMap({'files': fileIds}),
@@ -148,6 +348,7 @@ class ApiService {
 
   Future<List<MediaModel>> searchMedia(String query) async {
     try {
+      _applyAuthHeader();
       final result = await _dio.get(
         '${AppConstants.tmdbBaseUrl}/search/multi?query=$query',
       );
@@ -171,6 +372,7 @@ class ApiService {
     required int mediaId,
   }) async {
     try {
+      _applyAuthHeader();
       // Check cache first
       final cacheKey = 'media_${mediaType}_$mediaId';
       final cachedData = await CacheService.instance.getMediaDetails(
@@ -201,6 +403,7 @@ class ApiService {
     required int seasonNumber,
   }) async {
     try {
+      _applyAuthHeader();
       // Check cache first
       final cacheKey = 'season_${tvShowId}_$seasonNumber';
       final cachedData = await CacheService.instance.getSeasonDetails(
@@ -233,6 +436,7 @@ class ApiService {
     int? episode,
   }) async {
     try {
+      _applyAuthHeader();
       // Build the ID based on type
       String streamId;
       if (mediaType == 'movie') {
@@ -246,7 +450,10 @@ class ApiService {
       }
 
       // Check cache first
-      final cacheKey = 'torrentio_${mediaType}_$streamId';
+      final provider =
+          await StorageService.instance.getDebridProvider() ??
+          AppConstants.debridProvider;
+      final cacheKey = 'torrentio_${provider}_${mediaType}_$streamId';
       final cachedData = await CacheService.instance.getTorrentioStreams(
         cacheKey,
         maxAge: const Duration(hours: 6),
@@ -257,7 +464,12 @@ class ApiService {
       }
 
       // Build the configuration with RD API key and user settings
-      final configParts = ['realdebrid=${AppConstants.apiToken}'];
+      final token =
+          await StorageService.instance.getTokenForProvider(provider) ??
+          AppConstants.apiToken;
+      final debridKey =
+          provider == AppConstants.torboxProvider ? 'torbox' : 'realdebrid';
+      final configParts = ['${debridKey}=${token ?? ''}'];
 
       // Add providers
       final providers = await StorageService.instance.getTorrentioProviders();
@@ -308,4 +520,18 @@ class ApiService {
       rethrow;
     }
   }
+}
+
+class _TorboxLinkData {
+  final String torrentId;
+  final String fileId;
+  final String filename;
+  final int size;
+
+  const _TorboxLinkData({
+    required this.torrentId,
+    required this.fileId,
+    required this.filename,
+    required this.size,
+  });
 }

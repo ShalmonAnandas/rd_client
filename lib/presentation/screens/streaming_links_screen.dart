@@ -6,6 +6,7 @@ import 'package:rd_client/presentation/controllers/streaming_links_controller.da
 import 'package:rd_client/services/storage_service.dart';
 import 'package:rd_client/services/video_launcher.dart';
 import 'package:rd_client/services/watch_progress_service.dart';
+import 'package:rd_client/utils/app_constants.dart';
 import 'package:rd_client/widgets/responsive_body.dart';
 import 'package:rd_client/widgets/watch_progress_dialog.dart';
 import 'package:shimmer/shimmer.dart';
@@ -203,7 +204,7 @@ class _StreamingLinksScreenState extends State<StreamingLinksScreen>
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Try again later or check your RealDebrid account',
+                    'Try again later or check your ${AppConstants.debridDisplayName} account',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.5),
                       fontSize: 14,
@@ -232,7 +233,12 @@ class _StreamingLinksScreenState extends State<StreamingLinksScreen>
     // Parse the title to extract information
     final titleLines = stream.title?.split('\n') ?? [];
     final quality = stream.name?.split('\n').last ?? 'Unknown Quality';
-    final isCached = stream.name?.contains('[RD+]') ?? false;
+    final streamName = stream.name ?? '';
+    final isCached =
+        streamName.contains('[RD+]') ||
+        streamName.contains('[TB+]') ||
+        streamName.contains('[TorBox+]') ||
+        streamName.contains('[TBOX+]');
 
     String torrentName = '';
     String details = '';
@@ -432,7 +438,7 @@ class _StreamingLinksScreenState extends State<StreamingLinksScreen>
       }
 
       // Launch the Torrentio URL directly with Android Intent
-      // Add HTTP headers for Real-Debrid compatibility
+      // Add HTTP headers for Debrid compatibility
       await launchVideo(
         url: url,
         defaultVideoApp: defaultVideoApp,

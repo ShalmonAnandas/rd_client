@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:get/get.dart';
 import 'package:rd_client/presentation/controllers/settings_controller.dart';
+import 'package:rd_client/utils/app_constants.dart';
 import 'package:rd_client/widgets/responsive_body.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -14,6 +15,7 @@ class SettingsScreen extends StatelessWidget {
 
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await controller.loadDebridProvider();
       await controller.loadToken();
       if (!kIsWeb) {
         await controller.loadVideoApps();
@@ -110,16 +112,70 @@ class SettingsScreen extends StatelessWidget {
 
   Widget _buildApiConfigurationSection(SettingsController controller) {
     return _buildSectionContainer(
-      title: 'Real Debrid API Token',
+      title: 'Debrid Provider',
       icon: LucideIcons.key,
       iconColor: const Color(0xFF3B82F6),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Text(
+            'Debrid Provider',
+            style: TextStyle(
+              fontSize: 13,
+              color: Color(0xFF9CA3AF),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Obx(() => _buildProviderDropdown(controller)),
+          const SizedBox(height: 16),
           Obx(() => _buildTokenField(controller)),
           const SizedBox(height: 12),
           Obx(() => _buildTokenActions(controller)),
         ],
       ),
+    );
+  }
+
+  Widget _buildProviderDropdown(SettingsController controller) {
+    return DropdownButtonFormField<String>(
+      value: controller.selectedDebridProvider.value,
+      dropdownColor: const Color(0xFF1F2937),
+      iconEnabledColor: const Color(0xFF9CA3AF),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: const Color(0xFF0F1419),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF2D3748), width: 1),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF2D3748), width: 1),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF3B82F6), width: 1.5),
+        ),
+      ),
+      items: const [
+        DropdownMenuItem(
+          value: AppConstants.realDebridProvider,
+          child: Text('Real Debrid'),
+        ),
+        DropdownMenuItem(
+          value: AppConstants.torboxProvider,
+          child: Text('TorBox'),
+        ),
+      ],
+      onChanged: controller.isLoading.value
+          ? null
+          : (value) {
+              if (value != null) {
+                controller.setDebridProvider(value);
+              }
+            },
+      style: const TextStyle(color: Color(0xFFF9FAFB), fontSize: 14),
     );
   }
 
@@ -204,7 +260,7 @@ class SettingsScreen extends StatelessWidget {
       controller: controller.tokenController,
       style: const TextStyle(color: Color(0xFFF9FAFB), fontSize: 14),
       decoration: InputDecoration(
-        hintText: 'Enter your Real Debrid API token',
+        hintText: 'Enter your ${controller.debridDisplayName} API token',
         hintStyle: const TextStyle(color: Color(0xFF6B7280), fontSize: 14),
         filled: true,
         fillColor: const Color(0xFF0F1419),

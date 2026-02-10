@@ -7,7 +7,12 @@ import 'package:rd_client/utils/app_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  AppConstants.apiToken = await StorageService.instance.getToken();
+  AppConstants.debridProvider =
+      await StorageService.instance.getDebridProvider() ??
+      AppConstants.realDebridProvider;
+  AppConstants.apiToken = await StorageService.instance.getTokenForProvider(
+    AppConstants.debridProvider,
+  );
   runApp(const MainApp());
 }
 

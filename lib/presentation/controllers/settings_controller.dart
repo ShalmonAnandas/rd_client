@@ -18,6 +18,7 @@ class SettingsController extends GetxController {
   final Rx<Map<String, dynamic>?> selectedVideoApp = Rx<Map<String, dynamic>?>(
     null,
   );
+  final RxString selectedDebridProvider = AppConstants.realDebridProvider.obs;
 
   // Torrentio Configuration
   final RxSet<String> selectedProviders = <String>{}.obs;
@@ -40,10 +41,26 @@ class SettingsController extends GetxController {
     super.onClose();
   }
 
+  String get debridDisplayName =>
+      selectedDebridProvider.value == AppConstants.torboxProvider
+          ? 'TorBox'
+          : 'Real Debrid';
+
+  Future<void> loadDebridProvider() async {
+    final provider =
+        await StorageService.instance.getDebridProvider() ??
+        AppConstants.realDebridProvider;
+    selectedDebridProvider.value = provider;
+    AppConstants.debridProvider = provider;
+  }
+
   Future<void> loadToken() async {
     _setLoading(true);
     try {
-      final token = await StorageService.instance.getToken();
+      final token = await StorageService.instance.getTokenForProvider(
+        selectedDebridProvider.value,
+      );
+      AppConstants.apiToken = token;
       tokenController.text = token ?? '';
       toRestart.value = isTokenEditable.value = token == null || token.isEmpty;
     } catch (e) {
@@ -51,6 +68,16 @@ class SettingsController extends GetxController {
     } finally {
       _setLoading(false);
     }
+  }
+
+  Future<void> setDebridProvider(String provider) async {
+    if (provider == selectedDebridProvider.value) {
+      return;
+    }
+    selectedDebridProvider.value = provider;
+    AppConstants.debridProvider = provider;
+    await StorageService.instance.storeDebridProvider(provider);
+    await loadToken();
   }
 
   void enableTokenEditing() {
@@ -68,7 +95,14 @@ class SettingsController extends GetxController {
 
     _setLoading(true);
     try {
-      await StorageService.instance.storeToken(tokenController.text.trim());
+      if (selectedDebridProvider.value == AppConstants.torboxProvider) {
+        await StorageService.instance.storeTorboxToken(
+          tokenController.text.trim(),
+        );
+      } else {
+        await StorageService.instance.storeToken(tokenController.text.trim());
+      }
+      AppConstants.apiToken = tokenController.text.trim();
       isTokenEditable.value = false;
       if (toRestart.value) {
         if (kIsWeb) {
