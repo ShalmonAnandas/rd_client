@@ -93,8 +93,8 @@ class SettingsScreen extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
+              children: [
+                const Text(
                   'Welcome! Add your API tokens to get started.',
                   style: TextStyle(
                     color: Colors.white,
@@ -102,8 +102,8 @@ class SettingsScreen extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 6),
-                Text(
+                const SizedBox(height: 6),
+                const Text(
                   'Set at least one Debrid provider token to unlock downloads.',
                   style: TextStyle(
                     color: Color(0xFF9CA3AF),
