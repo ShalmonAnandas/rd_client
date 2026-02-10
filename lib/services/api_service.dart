@@ -50,9 +50,12 @@ class ApiService {
   bool get _isTorbox =>
       AppConstants.debridProvider == AppConstants.torboxProvider;
 
-  void _applyAuthHeader() {
+  void _applyAuthHeader({String? provider}) {
+    final token = provider != null
+        ? AppConstants.getTokenForProvider(provider)
+        : AppConstants.apiToken;
     _dio.options.headers = {
-      'Authorization': 'Bearer ${AppConstants.apiToken ?? ''}',
+      'Authorization': 'Bearer ${token ?? ''}',
     };
   }
 
@@ -174,10 +177,11 @@ class ApiService {
     );
   }
 
-  Future<List<Torrent>> getTorrentList() async {
+  Future<List<Torrent>> getTorrentList({String? provider}) async {
     try {
-      _applyAuthHeader();
-      if (_isTorbox) {
+      final useProvider = provider ?? AppConstants.debridProvider;
+      _applyAuthHeader(provider: useProvider);
+      if (useProvider == AppConstants.torboxProvider) {
         final response =
             await _dio.get('${AppConstants.torboxBaseUrl}/torrents/mylist');
         final data = response.data is Map<String, dynamic>
@@ -206,10 +210,11 @@ class ApiService {
     }
   }
 
-  Future<Torrent> getSingleTorrent(String id) async {
+  Future<Torrent> getSingleTorrent(String id, {String? provider}) async {
     try {
-      _applyAuthHeader();
-      if (_isTorbox) {
+      final useProvider = provider ?? AppConstants.debridProvider;
+      _applyAuthHeader(provider: useProvider);
+      if (useProvider == AppConstants.torboxProvider) {
         final response = await _dio.get(
           '${AppConstants.torboxBaseUrl}/torrents/mylist',
           queryParameters: {'id': id},
@@ -242,8 +247,12 @@ class ApiService {
         return unrestrictedLinkCache[link]!;
       }
 
-      _applyAuthHeader();
-      if (_isTorbox) {
+      final isTorboxLink = link.startsWith('torbox|') || link.startsWith('torbox:');
+      final provider = isTorboxLink
+          ? AppConstants.torboxProvider
+          : AppConstants.realDebridProvider;
+      _applyAuthHeader(provider: provider);
+      if (isTorboxLink) {
         final linkData = _parseTorboxLink(link);
         if (linkData == null) {
           throw Exception('Invalid TorBox download reference');
@@ -251,8 +260,7 @@ class ApiService {
         final response = await _dio.get(
           '${AppConstants.torboxBaseUrl}/torrents/requestdl',
           queryParameters: {
-            // TorBox requestdl requires the API token as a query parameter.
-            'token': AppConstants.apiToken,
+            'token': AppConstants.torboxToken,
             'torrent_id': linkData.torrentId,
             'file_id': linkData.fileId,
           },
@@ -342,10 +350,11 @@ class ApiService {
     }
   }
 
-  Future<void> deleteTorrent(String id) async {
+  Future<void> deleteTorrent(String id, {String? provider}) async {
     try {
-      _applyAuthHeader();
-      if (_isTorbox) {
+      final useProvider = provider ?? AppConstants.debridProvider;
+      _applyAuthHeader(provider: useProvider);
+      if (useProvider == AppConstants.torboxProvider) {
         await _dio.post(
           '${AppConstants.torboxBaseUrl}/torrents/controltorrent',
           data: {'torrent_id': id, 'operation': 'delete'},
@@ -463,9 +472,11 @@ class ApiService {
     required String imdbId,
     int? season,
     int? episode,
+    String? provider,
   }) async {
     try {
-      _applyAuthHeader();
+      final useProvider = provider ?? AppConstants.debridProvider;
+      _applyAuthHeader(provider: useProvider);
       // Build the ID based on type
       String streamId;
       if (mediaType == 'movie') {
@@ -479,10 +490,7 @@ class ApiService {
       }
 
       // Check cache first
-      final provider =
-          await StorageService.instance.getDebridProvider() ??
-          AppConstants.debridProvider;
-      final cacheKey = 'torrentio_${provider}_${mediaType}_$streamId';
+      final cacheKey = 'torrentio_${useProvider}_${mediaType}_$streamId';
       final cachedData = await CacheService.instance.getTorrentioStreams(
         cacheKey,
         maxAge: const Duration(hours: 6),
@@ -493,9 +501,9 @@ class ApiService {
       }
 
       // Build the configuration with RD API key and user settings
-      final token = await StorageService.instance.getTokenForProvider(provider);
+      final token = AppConstants.getTokenForProvider(useProvider);
       final debridKey =
-          provider == AppConstants.torboxProvider
+          useProvider == AppConstants.torboxProvider
               ? AppConstants.torboxProvider
               : AppConstants.realDebridProvider;
       final configParts = ['${debridKey}=${token ?? ''}'];

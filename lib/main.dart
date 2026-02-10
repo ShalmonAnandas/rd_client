@@ -10,7 +10,9 @@ void main() async {
   AppConstants.debridProvider =
       await StorageService.instance.getDebridProvider() ??
       AppConstants.realDebridProvider;
-  AppConstants.apiToken = await StorageService.instance.getTokenForProvider(
+  AppConstants.rdToken = await StorageService.instance.getToken();
+  AppConstants.torboxToken = await StorageService.instance.getTorboxToken();
+  AppConstants.apiToken = AppConstants.getTokenForProvider(
     AppConstants.debridProvider,
   );
   runApp(const MainApp());

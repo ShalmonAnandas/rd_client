@@ -8,6 +8,8 @@ class AppConstants {
   static String tmdbBaseUrl = 'https://streamline-be.vercel.app';
 
   static String? apiToken;
+  static String? rdToken;
+  static String? torboxToken;
   static const String realDebridProvider = 'realdebrid';
   static const String torboxProvider = 'torbox';
   static String debridProvider = realDebridProvider;
@@ -15,6 +17,16 @@ class AppConstants {
     realDebridProvider: 'Real Debrid',
     torboxProvider: 'TorBox',
   };
+
+  static bool get hasRdToken => rdToken != null && rdToken!.isNotEmpty;
+  static bool get hasTorboxToken =>
+      torboxToken != null && torboxToken!.isNotEmpty;
+  static bool get hasBothProviders => hasRdToken && hasTorboxToken;
+
+  static String? getTokenForProvider(String provider) {
+    if (provider == torboxProvider) return torboxToken;
+    return rdToken;
+  }
 
   static String get debridDisplayName =>
       debridProviderLabels[debridProvider] ?? 'Real Debrid';
