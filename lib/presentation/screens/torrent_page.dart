@@ -568,7 +568,7 @@ class _TorrentPageState extends State<TorrentPage> with WidgetsBindingObserver {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
+                  Text(
                     'Downloading from ${AppConstants.debridStatusLabel}',
                     style: TextStyle(
                       color: Colors.white,
