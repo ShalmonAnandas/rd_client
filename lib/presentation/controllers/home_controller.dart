@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:rd_client/utils/app_links_stub.dart'
-    if (dart.library.io) 'package:app_links/app_links.dart';
+import 'package:app_links/app_links.dart'
+    if (dart.library.html) 'package:rd_client/utils/app_links_stub.dart';
 import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:rd_client/models/torrent.dart';
