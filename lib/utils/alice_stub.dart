@@ -13,9 +13,9 @@ class AliceConfiguration {
 class Alice {
   Alice({required AliceConfiguration configuration});
 
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
-
-  GlobalKey<NavigatorState> getNavigatorKey() => _navigatorKey;
+  GlobalKey<NavigatorState> getNavigatorKey() {
+    throw UnsupportedError('Alice inspector is not supported on this platform.');
+  }
 
   void addAdapter(Object adapter) {}
 
