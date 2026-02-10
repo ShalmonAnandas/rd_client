@@ -25,7 +25,7 @@ class AddTorrentsController extends GetxController {
         selectedFileIds.clear();
         // TorBox does not require explicit file selection; preselect all so
         // users can continue without manual selection.
-        addedTorrent.value?.files
+        addedTorrent?.files
             ?.where((file) => file.id != null)
             .forEach((file) => selectedFileIds.add(file.id!));
         selectAll.value = selectedFileIds.isNotEmpty;
