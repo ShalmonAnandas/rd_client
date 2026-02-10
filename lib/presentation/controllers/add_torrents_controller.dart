@@ -23,10 +23,11 @@ class AddTorrentsController extends GetxController {
     fetchAddedTorrent().then((_) {
       if (AppConstants.debridProvider == AppConstants.torboxProvider) {
         selectedFileIds.clear();
-        selectedFileIds.addAll({
-          for (var file in addedTorrent.value?.files ?? [])
-            if (file.id != null) file.id!,
-        });
+        // TorBox does not require explicit file selection; preselect all so
+        // users can continue without manual selection.
+        addedTorrent.value?.files
+            ?.where((file) => file.id != null)
+            .forEach((file) => selectedFileIds.add(file.id!));
         selectAll.value = selectedFileIds.isNotEmpty;
       } else {
         selectedFileIds.clear();

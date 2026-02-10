@@ -234,11 +234,8 @@ class _StreamingLinksScreenState extends State<StreamingLinksScreen>
     final titleLines = stream.title?.split('\n') ?? [];
     final quality = stream.name?.split('\n').last ?? 'Unknown Quality';
     final streamName = stream.name ?? '';
-    final isCached =
-        streamName.contains('[RD+]') ||
-        streamName.contains('[TB+]') ||
-        streamName.contains('[TorBox+]') ||
-        streamName.contains('[TBOX+]');
+    final isCached = AppConstants.torrentioCacheMarkers
+        .any((marker) => streamName.contains(marker));
 
     String torrentName = '';
     String details = '';
