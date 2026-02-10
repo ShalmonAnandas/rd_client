@@ -15,12 +15,21 @@ class ResponsiveBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: maxWidth),
-        child: Padding(padding: padding, child: child),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isWideScreen = constraints.maxWidth > 1200;
+        final effectiveMaxWidth = isWideScreen
+            ? constraints.maxWidth * 0.8
+            : maxWidth;
+
+        return Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: effectiveMaxWidth),
+            child: Padding(padding: padding, child: child),
+          ),
+        );
+      },
     );
   }
 }

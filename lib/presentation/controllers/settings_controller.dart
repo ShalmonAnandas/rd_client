@@ -9,8 +9,10 @@ import 'package:rd_client/utils/restart_app_stub.dart'
     if (dart.library.io) 'package:restart_app/restart_app.dart';
 
 class SettingsController extends GetxController {
-  final TextEditingController tokenController = TextEditingController();
-  final RxBool isTokenEditable = false.obs;
+  final TextEditingController rdTokenController = TextEditingController();
+  final TextEditingController torboxTokenController = TextEditingController();
+  final RxBool isRdTokenEditable = false.obs;
+  final RxBool isTorboxTokenEditable = false.obs;
   final RxBool isLoading = false.obs;
   final RxBool isVideoAppsLoading = false.obs;
   final RxList<Map<String, dynamic>> availableVideoApps =
@@ -18,6 +20,8 @@ class SettingsController extends GetxController {
   final Rx<Map<String, dynamic>?> selectedVideoApp = Rx<Map<String, dynamic>?>(
     null,
   );
+
+  // Keep for backward compatibility
   final RxString selectedDebridProvider = AppConstants.realDebridProvider.obs;
 
   // Torrentio Configuration
@@ -29,6 +33,21 @@ class SettingsController extends GetxController {
 
   final RxBool toRestart = false.obs;
 
+  // Convenience getters for backward compatibility
+  TextEditingController get tokenController {
+    if (selectedDebridProvider.value == AppConstants.torboxProvider) {
+      return torboxTokenController;
+    }
+    return rdTokenController;
+  }
+
+  RxBool get isTokenEditable {
+    if (selectedDebridProvider.value == AppConstants.torboxProvider) {
+      return isTorboxTokenEditable;
+    }
+    return isRdTokenEditable;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -37,7 +56,8 @@ class SettingsController extends GetxController {
 
   @override
   void onClose() {
-    tokenController.dispose();
+    rdTokenController.dispose();
+    torboxTokenController.dispose();
     super.onClose();
   }
 
@@ -56,12 +76,23 @@ class SettingsController extends GetxController {
   Future<void> loadToken() async {
     _setLoading(true);
     try {
-      final token = await StorageService.instance.getTokenForProvider(
+      // Load both tokens
+      final rdToken = await StorageService.instance.getToken();
+      final torboxToken = await StorageService.instance.getTorboxToken();
+
+      AppConstants.rdToken = rdToken;
+      AppConstants.torboxToken = torboxToken;
+      AppConstants.apiToken = AppConstants.getTokenForProvider(
         selectedDebridProvider.value,
       );
-      AppConstants.apiToken = token;
-      tokenController.text = token ?? '';
-      toRestart.value = isTokenEditable.value = token == null || token.isEmpty;
+
+      rdTokenController.text = rdToken ?? '';
+      torboxTokenController.text = torboxToken ?? '';
+
+      isRdTokenEditable.value = rdToken == null || rdToken.isEmpty;
+      isTorboxTokenEditable.value = torboxToken == null || torboxToken.isEmpty;
+      toRestart.value = (rdToken == null || rdToken.isEmpty) &&
+          (torboxToken == null || torboxToken.isEmpty);
     } catch (e) {
       debugPrint('Error loading token: $e');
     } finally {
@@ -75,68 +106,125 @@ class SettingsController extends GetxController {
     }
     selectedDebridProvider.value = provider;
     AppConstants.debridProvider = provider;
+    AppConstants.apiToken = AppConstants.getTokenForProvider(provider);
     await StorageService.instance.storeDebridProvider(provider);
-    await loadToken();
+  }
+
+  void enableRdTokenEditing() {
+    isRdTokenEditable.value = true;
+    rdTokenController.clear();
+  }
+
+  void enableTorboxTokenEditing() {
+    isTorboxTokenEditable.value = true;
+    torboxTokenController.clear();
   }
 
   void enableTokenEditing() {
-    isTokenEditable.value = true;
-    tokenController.clear();
+    if (selectedDebridProvider.value == AppConstants.torboxProvider) {
+      enableTorboxTokenEditing();
+    } else {
+      enableRdTokenEditing();
+    }
   }
 
-  void disableTokenEditing() {
-    isTokenEditable.value = false;
+  void disableRdTokenEditing() {
+    isRdTokenEditable.value = false;
     loadToken();
   }
 
-  Future<void> saveToken() async {
-    if (tokenController.text.trim().isEmpty) return;
+  void disableTorboxTokenEditing() {
+    isTorboxTokenEditable.value = false;
+    loadToken();
+  }
+
+  void disableTokenEditing() {
+    if (selectedDebridProvider.value == AppConstants.torboxProvider) {
+      disableTorboxTokenEditing();
+    } else {
+      disableRdTokenEditing();
+    }
+  }
+
+  Future<void> saveRdToken() async {
+    if (rdTokenController.text.trim().isEmpty) return;
 
     _setLoading(true);
     try {
-      if (selectedDebridProvider.value == AppConstants.torboxProvider) {
-        await StorageService.instance.storeTorboxToken(
-          tokenController.text.trim(),
-        );
-      } else {
-        await StorageService.instance.storeToken(tokenController.text.trim());
+      await StorageService.instance.storeToken(rdTokenController.text.trim());
+      AppConstants.rdToken = rdTokenController.text.trim();
+      if (selectedDebridProvider.value == AppConstants.realDebridProvider) {
+        AppConstants.apiToken = rdTokenController.text.trim();
       }
-      AppConstants.apiToken = tokenController.text.trim();
-      isTokenEditable.value = false;
-      if (toRestart.value) {
-        if (kIsWeb) {
-          Get.dialog(
-            AlertDialog(
-              title: const Text('Refresh Required'),
-              content: const Text(
-                'Please refresh the page to apply the updated token.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Get.back(),
-                  child: const Text('Later'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Get.back();
-                    triggerWebReload();
-                  },
-                  child: const Text('Refresh now'),
-                ),
-              ],
-            ),
-          );
-        } else {
-          Restart.restartApp(
-            notificationTitle: 'Restarting App',
-            notificationBody: 'Please tap here to open the app again.',
-          );
-        }
-      }
+      isRdTokenEditable.value = false;
+      _checkRestartNeeded();
     } catch (e) {
-      debugPrint('Error saving token: $e');
+      debugPrint('Error saving RD token: $e');
     } finally {
       _setLoading(false);
+    }
+  }
+
+  Future<void> saveTorboxToken() async {
+    if (torboxTokenController.text.trim().isEmpty) return;
+
+    _setLoading(true);
+    try {
+      await StorageService.instance.storeTorboxToken(
+        torboxTokenController.text.trim(),
+      );
+      AppConstants.torboxToken = torboxTokenController.text.trim();
+      if (selectedDebridProvider.value == AppConstants.torboxProvider) {
+        AppConstants.apiToken = torboxTokenController.text.trim();
+      }
+      isTorboxTokenEditable.value = false;
+      _checkRestartNeeded();
+    } catch (e) {
+      debugPrint('Error saving TorBox token: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> saveToken() async {
+    if (selectedDebridProvider.value == AppConstants.torboxProvider) {
+      await saveTorboxToken();
+    } else {
+      await saveRdToken();
+    }
+  }
+
+  void _checkRestartNeeded() {
+    final noTokens = !AppConstants.hasRdToken && !AppConstants.hasTorboxToken;
+    if (noTokens && toRestart.value) {
+      if (kIsWeb) {
+        Get.dialog(
+          AlertDialog(
+            title: const Text('Refresh Required'),
+            content: const Text(
+              'Please refresh the page to apply the updated token.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(),
+                child: const Text('Later'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Get.back();
+                  triggerWebReload();
+                },
+                child: const Text('Refresh now'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        Restart.restartApp(
+          notificationTitle: 'Restarting App',
+          notificationBody: 'Please tap here to open the app again.',
+        );
+      }
     }
   }
 

@@ -13,7 +13,11 @@ import 'package:flutter/foundation.dart';
 
 class HomeController extends GetxController {
   RxList<Torrent> torrents = <Torrent>[].obs;
+  RxList<Torrent> rdTorrents = <Torrent>[].obs;
+  RxList<Torrent> torboxTorrents = <Torrent>[].obs;
   RxBool isLoading = true.obs;
+  RxBool isRdLoading = true.obs;
+  RxBool isTorboxLoading = true.obs;
 
   late final ApiService apiService;
   final _appLinks = AppLinks();
@@ -44,16 +48,53 @@ class HomeController extends GetxController {
   Future<void> fetchTorrents() async {
     isLoading.value = true;
     torrents.clear();
-    torrents.value = await apiService.getTorrentList();
+    rdTorrents.clear();
+    torboxTorrents.clear();
+
+    final futures = <Future>[];
+
+    if (AppConstants.hasRdToken) {
+      isRdLoading.value = true;
+      futures.add(
+        apiService.getTorrentList(provider: AppConstants.realDebridProvider).then(
+          (list) {
+            rdTorrents.value = list;
+            isRdLoading.value = false;
+          },
+        ).catchError((e) {
+          isRdLoading.value = false;
+        }),
+      );
+    } else {
+      isRdLoading.value = false;
+    }
+
+    if (AppConstants.hasTorboxToken) {
+      isTorboxLoading.value = true;
+      futures.add(
+        apiService.getTorrentList(provider: AppConstants.torboxProvider).then(
+          (list) {
+            torboxTorrents.value = list;
+            isTorboxLoading.value = false;
+          },
+        ).catchError((e) {
+          isTorboxLoading.value = false;
+        }),
+      );
+    } else {
+      isTorboxLoading.value = false;
+    }
+
+    await Future.wait(futures);
+    torrents.value = [...rdTorrents, ...torboxTorrents];
     isLoading.value = false;
   }
 
   Future<bool> checkApiToken() async {
-    final provider =
-        await StorageService.instance.getDebridProvider() ??
-        AppConstants.realDebridProvider;
-    final token = await StorageService.instance.getTokenForProvider(provider);
-    return token != null;
+    final rdToken = await StorageService.instance.getToken();
+    final torboxToken = await StorageService.instance.getTorboxToken();
+    return (rdToken != null && rdToken.isNotEmpty) ||
+        (torboxToken != null && torboxToken.isNotEmpty);
   }
 
   void _initializeDeepLinks() {

@@ -10,6 +10,7 @@ import 'package:rd_client/presentation/screens/add_torrents_screen.dart';
 import 'package:rd_client/presentation/screens/library_screen.dart';
 import 'package:rd_client/presentation/screens/search_entry_point.dart';
 import 'package:rd_client/presentation/screens/settings_screen.dart';
+import 'package:rd_client/utils/app_constants.dart';
 import 'package:rd_client/utils/responsive_constants.dart';
 import 'package:rd_client/widgets/add_magnet_dialog.dart';
 import 'package:rd_client/widgets/torrent_list_view.dart';
@@ -114,17 +115,25 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildGlassBottomNav() {
-    return Obx(
-      () => Align(
-        alignment: Alignment.bottomCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: ResponsiveConstants.bottomNavMaxWidth,
-          ),
-          child: Container(
-            margin: const EdgeInsets.all(24),
-            height: 56,
-            child: LiquidGlassLayer(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isLandscape = MediaQuery.of(context).size.width >
+            MediaQuery.of(context).size.height;
+        final navMaxWidth = isLandscape
+            ? ResponsiveConstants.bottomNavLandscapeMaxWidth
+            : ResponsiveConstants.bottomNavMaxWidth;
+
+        return Obx(
+          () => Align(
+            alignment: Alignment.bottomCenter,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: navMaxWidth,
+              ),
+              child: Container(
+                margin: const EdgeInsets.all(24),
+                height: 56,
+                child: LiquidGlassLayer(
               settings: const LiquidGlassSettings(
                 thickness: 20,
                 blur: 2,
@@ -180,6 +189,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ),
         ),
       ),
+    );
+      },
     );
   }
 
@@ -275,19 +286,70 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   }
 
   Widget _buildBody() {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      floatingActionButton: _buildFAB(),
-
-      body: Center(
-        child: Obx(() {
-          return TorrentListView(
-            torrents: controller.torrents,
-            isLoading: controller.isLoading.value,
-            onRefresh: controller.fetchTorrents,
-          );
-        }),
-      ),
-    );
+    return Obx(() {
+      final hasBoth = AppConstants.hasBothProviders;
+      if (!hasBoth) {
+        return Scaffold(
+          appBar: _buildAppBar(),
+          floatingActionButton: _buildFAB(),
+          body: Center(
+            child: Obx(() {
+              return TorrentListView(
+                torrents: controller.torrents,
+                isLoading: controller.isLoading.value,
+                onRefresh: controller.fetchTorrents,
+              );
+            }),
+          ),
+        );
+      }
+      return DefaultTabController(
+        length: 3,
+        child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Downloads'),
+            bottom: const TabBar(
+              indicatorColor: Color(0xFF3B82F6),
+              labelColor: Colors.white,
+              unselectedLabelColor: Color(0xFF9CA3AF),
+              tabs: [
+                Tab(text: 'All'),
+                Tab(text: 'Real Debrid'),
+                Tab(text: 'TorBox'),
+              ],
+            ),
+          ),
+          floatingActionButton: _buildFAB(),
+          body: TabBarView(
+            children: [
+              // All torrents
+              Center(
+                child: Obx(() => TorrentListView(
+                      torrents: controller.torrents,
+                      isLoading: controller.isLoading.value,
+                      onRefresh: controller.fetchTorrents,
+                    )),
+              ),
+              // RD torrents
+              Center(
+                child: Obx(() => TorrentListView(
+                      torrents: controller.rdTorrents,
+                      isLoading: controller.isRdLoading.value,
+                      onRefresh: controller.fetchTorrents,
+                    )),
+              ),
+              // TorBox torrents
+              Center(
+                child: Obx(() => TorrentListView(
+                      torrents: controller.torboxTorrents,
+                      isLoading: controller.isTorboxLoading.value,
+                      onRefresh: controller.fetchTorrents,
+                    )),
+              ),
+            ],
+          ),
+        ),
+      );
+    });
   }
 }

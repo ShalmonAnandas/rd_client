@@ -110,122 +110,173 @@ class _StreamingLinksScreenState extends State<StreamingLinksScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F0F0F),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    final hasBoth = AppConstants.hasBothProviders;
+
+    if (!hasBoth) {
+      return Scaffold(
+        backgroundColor: const Color(0xFF0F0F0F),
+        appBar: _buildAppBar(),
+        body: ResponsiveBody(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Obx(() => _buildStreamContent(controller.streams,
+              controller.isLoading.value)),
+        ),
+      );
+    }
+
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: const Color(0xFF0F0F0F),
+        appBar: _buildAppBar(
+          bottom: const TabBar(
+            indicatorColor: Color(0xFF3B82F6),
+            labelColor: Colors.white,
+            unselectedLabelColor: Color(0xFF9CA3AF),
+            tabs: [
+              Tab(text: 'All'),
+              Tab(text: 'Real Debrid'),
+              Tab(text: 'TorBox'),
+            ],
+          ),
+        ),
+        body: TabBarView(
           children: [
-            Text(
-              widget.title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            ResponsiveBody(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Obx(() => _buildStreamContent(
+                  controller.streams, controller.isLoading.value)),
             ),
-            if (widget.season != null && widget.episode != null)
-              Text(
-                'Season ${widget.season} Episode ${widget.episode}',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
-                ),
-              ),
+            ResponsiveBody(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Obx(() => _buildStreamContent(
+                  controller.rdStreams, controller.isRdLoading.value)),
+            ),
+            ResponsiveBody(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Obx(() => _buildStreamContent(
+                  controller.torboxStreams,
+                  controller.isTorboxLoading.value)),
+            ),
           ],
         ),
-        leading: IconButton(
-          icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+      ),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar({PreferredSizeWidget? bottom}) {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      bottom: bottom,
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (widget.season != null && widget.episode != null)
+            Text(
+              'Season ${widget.season} Episode ${widget.episode}',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 14,
+              ),
+            ),
+        ],
+      ),
+      leading: IconButton(
+        icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
+        onPressed: () => Navigator.pop(context),
+      ),
+    );
+  }
+
+  Widget _buildStreamContent(
+      List<TorrentioStream> streams, bool isLoading) {
+    if (isLoading) {
+      return _buildLoadingShimmer();
+    }
+
+    if (controller.errorMessage.value.isNotEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              LucideIcons.circleAlert,
+              size: 64,
+              color: Colors.red.withOpacity(0.7),
+            ),
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                controller.errorMessage.value,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 16,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: controller.loadStreams,
+              icon: const Icon(LucideIcons.refreshCw),
+              label: const Text('Retry'),
+            ),
+          ],
         ),
-      ),
-      body: ResponsiveBody(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Obx(() {
-          if (controller.isLoading.value) {
-            return _buildLoadingShimmer();
-          }
+      );
+    }
 
-          if (controller.errorMessage.value.isNotEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    LucideIcons.circleAlert,
-                    size: 64,
-                    color: Colors.red.withOpacity(0.7),
-                  ),
-                  const SizedBox(height: 16),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32),
-                    child: Text(
-                      controller.errorMessage.value,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: controller.loadStreams,
-                    icon: const Icon(LucideIcons.refreshCw),
-                    label: const Text('Retry'),
-                  ),
-                ],
+    if (streams.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              LucideIcons.library,
+              size: 64,
+              color: Colors.white.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No streams available',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 16,
               ),
-            );
-          }
-
-          final streams = controller.streams;
-          if (streams.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    LucideIcons.library,
-                    size: 64,
-                    color: Colors.white.withOpacity(0.3),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No streams available',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Try again later or check your ${AppConstants.debridDisplayName} account',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
-                      fontSize: 14,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try again later or check your debrid account',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 14,
               ),
-            );
-          }
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
 
-          return ListView.builder(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            itemCount: streams.length,
-            itemBuilder: (context, index) {
-              final stream = streams[index];
-              return _buildStreamCard(stream);
-            },
-          );
-        }),
-      ),
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      itemCount: streams.length,
+      itemBuilder: (context, index) {
+        final stream = streams[index];
+        return _buildStreamCard(stream);
+      },
     );
   }
 
